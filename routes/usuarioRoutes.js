@@ -31,5 +31,24 @@ router.post('/usuarios', async (req, res) => {
         res.status(400).json({ message: error.message });
     }
 });
+ // Endpoint para iniciar sesión
+router.post('/login', async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        const usuario = await Usuario.findOne({ "datos_personales.correo": email });
 
+        if (!usuario) {
+            return res.status(400).json({ message: 'Correo o contraseña incorrectos' });
+        }
+
+        const passwordMatch = await bcrypt.compare(password, usuario.password);
+        if (!passwordMatch) {
+            return res.status(400).json({ message: 'Correo o contraseña incorrectos' });
+        }
+
+        res.json({ message: 'Inicio de sesión exitoso' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
 module.exports = router;
