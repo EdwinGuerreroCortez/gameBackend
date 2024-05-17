@@ -15,8 +15,7 @@ router.get('/usuarios', async (req, res) => {
 // Endpoint para crear un nuevo usuario
 router.post('/usuarios', async (req, res) => {
     try {
-        // Verificar los datos recibidos
-        console.log(req.body);
+        
 
         const nuevoUsuario = await Usuario.create(req.body);
         res.status(201).json(nuevoUsuario);
