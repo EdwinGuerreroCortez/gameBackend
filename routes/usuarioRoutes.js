@@ -1,3 +1,4 @@
+//usuarioRoutes
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcrypt');
@@ -63,6 +64,44 @@ router.get('/usuarios/:id', async (req, res) => {
         res.json(usuario);
     } catch (error) {
         res.status(500).json({ message: error.message });
+    }
+});
+// Endpoint para actualizar un usuario por ID
+router.put('/usuarios/:id', async (req, res) => {
+    try {
+        const usuario = await Usuario.findById(req.params.id);
+        if (!usuario) {
+            return res.status(404).json({ message: 'Usuario no encontrado' });
+        }
+
+        const updates = req.body;
+        if (updates.password) {
+            updates.password = await bcrypt.hash(updates.password, 10);
+        }
+
+        Object.assign(usuario, updates);
+        await usuario.save();
+
+        res.json(usuario);
+    } catch (error) {
+        res.status(400).json({ message: error.message });
+    }
+});
+
+// Endpoint para actualizar la imagen de perfil
+router.put('/usuarios/:id/imagen', async (req, res) => {
+    try {
+        const usuario = await Usuario.findById(req.params.id);
+        if (!usuario) {
+            return res.status(404).json({ message: 'Usuario no encontrado' });
+        }
+
+        usuario.imagenPerfil = req.body.imagenPerfil;
+        await usuario.save();
+
+        res.json(usuario);
+    } catch (error) {
+        res.status(400).json({ message: error.message });
     }
 });
 
