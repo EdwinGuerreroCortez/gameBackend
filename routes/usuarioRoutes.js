@@ -66,6 +66,7 @@ router.get('/usuarios/:id', async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 });
+
 // Endpoint para actualizar un usuario por ID
 router.put('/usuarios/:id', async (req, res) => {
     try {
@@ -75,13 +76,22 @@ router.put('/usuarios/:id', async (req, res) => {
         }
 
         const updates = req.body;
+
         if (updates.password) {
             updates.password = await bcrypt.hash(updates.password, 10);
         }
 
-        Object.assign(usuario, updates);
-        await usuario.save();
+        Object.keys(updates).forEach(key => {
+            if (key === 'datos_personales') {
+                Object.keys(updates.datos_personales).forEach(subKey => {
+                    usuario.datos_personales[subKey] = updates.datos_personales[subKey];
+                });
+            } else {
+                usuario[key] = updates[key];
+            }
+        });
 
+        await usuario.save();
         res.json(usuario);
     } catch (error) {
         res.status(400).json({ message: error.message });
