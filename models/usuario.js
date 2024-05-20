@@ -10,7 +10,10 @@ const usuarioSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  imagenPerfil: String,
+  imagenPerfil: {
+    type: String,
+    default: 'https://png.pngtree.com/png-vector/20191018/ourmid/pngtree-user-icon-isolated-on-abstract-background-png-image_1824979.jpg'
+  },
   tipo: {
     type: String,
     required: true,
@@ -84,6 +87,6 @@ const usuarioSchema = new mongoose.Schema({
   ],
 });
 
-const Usuario = mongoose.model('usuario', usuarioSchema);
+const Usuario = mongoose.model('Usuario', usuarioSchema);
 
 module.exports = Usuario;

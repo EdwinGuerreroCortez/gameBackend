@@ -31,7 +31,8 @@ router.post('/usuarios', async (req, res) => {
         res.status(400).json({ message: error.message });
     }
 });
- // Endpoint para iniciar sesión
+
+// Endpoint para iniciar sesión
 router.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -46,9 +47,23 @@ router.post('/login', async (req, res) => {
             return res.status(400).json({ message: 'Correo o contraseña incorrectos' });
         }
 
-        res.json({ message: 'Inicio de sesión exitoso' });
+        // Devolver solo el ID del usuario
+        res.json({ message: 'Inicio de sesión exitoso', userId: usuario._id });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
 });
+// Endpoint para obtener un usuario por ID
+router.get('/usuarios/:id', async (req, res) => {
+    try {
+        const usuario = await Usuario.findById(req.params.id);
+        if (!usuario) {
+            return res.status(404).json({ message: 'Usuario no encontrado' });
+        }
+        res.json(usuario);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
 module.exports = router;
