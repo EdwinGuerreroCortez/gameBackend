@@ -48,8 +48,8 @@ router.post('/login', async (req, res) => {
             return res.status(400).json({ message: 'Correo o contraseña incorrectos' });
         }
 
-        // Devolver solo el ID del usuario
-        res.json({ message: 'Inicio de sesión exitoso', userId: usuario._id });
+        // Devolver el ID del usuario y el tipo
+        res.json({ message: 'Inicio de sesión exitoso', userId: usuario._id, tipo: usuario.tipo });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
