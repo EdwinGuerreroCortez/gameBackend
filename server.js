@@ -5,6 +5,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const userRoutes = require('./routes/usuarioRoutes');
 const imagenesRouter = require('./routes/crudImagenes');
+const faqRoutes = require('./routes/faqRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -21,6 +22,7 @@ mongoose.connect(process.env.MONGODB_URI)
 // Rutas
 app.use('/api/', userRoutes);
 app.use('/api/imagenes', imagenesRouter);
+app.use('/api', faqRoutes);
 
 // Iniciar el servidor
 app.listen(PORT, () => {
