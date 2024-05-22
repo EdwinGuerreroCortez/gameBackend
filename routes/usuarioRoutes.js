@@ -114,5 +114,48 @@ router.put('/usuarios/:id/imagen', async (req, res) => {
         res.status(400).json({ message: error.message });
     }
 });
+// Nuevo endpoint para crear un nuevo administrador
+router.post('/usuarios/admin', async (req, res) => {
+    try {
+        const hashedPassword = await bcrypt.hash(req.body.contrasena, 10);
+        const nuevoAdministrador = new Usuario({
+            username: req.body.nomusuario,
+            password: hashedPassword,
+            tipo: 'administrador', // Asignar el tipo 'administrador'
+            datos_personales: {
+                nombre: req.body.nombre,
+                apellido_paterno: req.body.apellidoPaterno,
+                apellido_materno: req.body.apellidoMaterno,
+                correo: req.body.correo,
+                edad: 0, // Valor predeterminado
+                genero: 'N/A', // Valor predeterminado
+                telefono: 'N/A', // Valor predeterminado
+                grado_de_estudios: 'N/A' // Valor predeterminado
+            },
+            experiencia_en_lenguaje_de_programacion: [], // Valor predeterminado
+            evaluaciones_realizadas: [] // Valor predeterminado
+        });
+
+        await nuevoAdministrador.save();
+        res.status(201).json(nuevoAdministrador);
+    } catch (error) {
+        res.status(400).json({ message: error.message });
+    }
+});
+// Endpoint para eliminar un usuario por ID
+router.delete('/usuarios/:id', async (req, res) => {
+    try {
+        const usuario = await Usuario.findById(req.params.id);
+        if (!usuario) {
+            return res.status(404).json({ message: 'Usuario no encontrado' });
+        }
+        await Usuario.deleteOne({ _id: req.params.id });
+        res.json({ message: 'Usuario eliminado con éxito' });
+    } catch (error) {
+        console.error('Error al eliminar usuario:', error);
+        res.status(500).json({ message: 'Error al eliminar usuario', error: error.message });
+    }
+});
+
 
 module.exports = router;

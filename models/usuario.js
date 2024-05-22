@@ -38,14 +38,17 @@ const usuarioSchema = new mongoose.Schema({
     edad: {
       type: Number,
       required: true,
+      default: 0 // valor predeterminado para administradores
     },
     genero: {
       type: String,
       required: true,
+      default: 'N/A' // valor predeterminado para administradores
     },
     telefono: {
       type: String,
       required: true,
+      default: 'N/A' // valor predeterminado para administradores
     },
     correo: {
       type: String,
@@ -55,36 +58,47 @@ const usuarioSchema = new mongoose.Schema({
     grado_de_estudios: {
       type: String,
       required: true,
+      default: 'N/A' // valor predeterminado para administradores
     },
   },
   experiencia_en_lenguaje_de_programacion: {
     type: [String],
     required: true,
+    default: [] // valor predeterminado para administradores
   },
   evaluaciones_realizadas: [
     {
       tema_id: {
         type: mongoose.Schema.Types.ObjectId,
         required: true,
+        default: null // valor predeterminado para administradores
       },
       preguntas_respondidas: [
         {
           pregunta_id: {
             type: mongoose.Schema.Types.ObjectId,
             required: true,
+            default: null // valor predeterminado para administradores
           },
           respuesta_elegida: {
             type: String,
             required: true,
+            default: 'N/A' // valor predeterminado para administradores
           },
         },
       ],
       calificacion: {
         type: Number,
         required: true,
+        default: 0 // valor predeterminado para administradores
       },
     },
   ],
+  rol: {
+    type: String,
+    enum: ['cliente', 'administrador'],
+    default: 'cliente',
+  }
 });
 
 const Usuario = mongoose.model('Usuario', usuarioSchema);
