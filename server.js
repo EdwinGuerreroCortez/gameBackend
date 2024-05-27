@@ -6,8 +6,9 @@ const cors = require('cors');
 const userRoutes = require('./routes/usuarioRoutes');
 const imagenesRouter = require('./routes/crudImagenes');
 const faqRoutes = require('./routes/faqRoutes');
+const misionVisionRoutes = require('./routes/misionVisionRoutes'); 
 
-const app = express();
+const app = express(); 
 const PORT = process.env.PORT || 3001;
 
 // Middleware
@@ -23,7 +24,7 @@ mongoose.connect(process.env.MONGODB_URI)
 app.use('/api/', userRoutes);
 app.use('/api/imagenes', imagenesRouter);
 app.use('/api', faqRoutes);
-
+app.use('/api', misionVisionRoutes); 
 // Iniciar el servidor
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en el puerto ${PORT}`);
