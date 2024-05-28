@@ -1,0 +1,29 @@
+const mongoose = require('mongoose');
+
+const evaluacionSchema = new mongoose.Schema({
+  tema_id: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Tema', // Asegúrate de tener un modelo Tema
+    required: true
+  },
+  evaluacion: [
+    {
+      pregunta: {
+        type: String,
+        required: true
+      },
+      opciones: {
+        type: [String],
+        required: true
+      },
+      respuesta_correcta: {
+        type: String,
+        required: true
+      }
+    }
+  ]
+});
+
+const Evaluacion = mongoose.model('Evaluacion', evaluacionSchema);
+
+module.exports = Evaluacion;
