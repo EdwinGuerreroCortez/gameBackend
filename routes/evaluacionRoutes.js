@@ -9,33 +9,25 @@ router.post('/evaluaciones/upload', upload.single('file'), async (req, res) => {
   try {
     const tema_id = req.body.tema;
     const buffer = req.file.buffer;
-    console.log('Tema ID:', tema_id); // Verificar tema_id recibido
-    console.log('Buffer:', buffer); // Verificar buffer recibido
 
     const workbook = xlsx.read(buffer, { type: 'buffer' });
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
     const data = xlsx.utils.sheet_to_json(worksheet);
 
-    console.log('Datos procesados del Excel:', data); // Verificar datos del Excel
-
-    const evaluaciones = data.map(item => ({
-      tema_id: tema_id,
-      evaluacion: [
-        {
-          pregunta: item.pregunta,
-          opciones: item.opciones.split(',').map(opcion => opcion.trim()),
-          respuesta_correcta: item.respuesta_correcta
-        }
-      ]
+    const nuevasEvaluaciones = data.map(item => ({
+      pregunta: item.pregunta,
+      opciones: item.opciones.split(',').map(opcion => opcion.trim()),
+      respuesta_correcta: item.respuesta_correcta
     }));
 
-    console.log('Evaluaciones:', evaluaciones); // Verificar estructura de evaluaciones
+    // Crear un nuevo documento para cada archivo Excel
+    const nuevaEvaluacion = new Evaluacion({
+      tema_id: tema_id,
+      evaluacion: nuevasEvaluaciones
+    });
 
-    for (const evaluacion of evaluaciones) {
-      const nuevaEvaluacion = new Evaluacion(evaluacion);
-      await nuevaEvaluacion.save();
-    }
+    await nuevaEvaluacion.save();
 
     res.status(201).json({ message: 'Evaluaciones cargadas exitosamente' });
   } catch (error) {
