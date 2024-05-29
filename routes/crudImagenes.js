@@ -1,3 +1,4 @@
+//crudImagenes.js
 const express = require('express');
 const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
@@ -39,5 +40,28 @@ imagenesRouter.post('/upload', upload.single('imagen'), (req, res) => {
     // Conectar el buffer del archivo a un stream de lectura para enviarlo a Cloudinary
     streamifier.createReadStream(req.file.buffer).pipe(cld_upload_stream);
 });
+// POST /api/imagenes/upload-video
+// Ruta para la subida de videos a Cloudinary
+imagenesRouter.post('/upload-video', upload.single('video'), (req, res) => {
+    if (!req.file) {
+        return res.status(400).send("No se ha subido ningún archivo.");
+    }
 
+    console.log('Archivo recibido:', req.file);
+
+    // Crear un stream de carga para Cloudinary
+    const cld_upload_stream = cloudinary.uploader.upload_stream(
+        { resource_type: 'video' },
+        (error, result) => {
+            if (error) {
+                console.error('Error al actualizar el video:', error);
+                return res.status(500).json({ error: error.message });
+            }
+            res.json({ url: result.secure_url });
+        }
+    );
+
+    // Conectar el buffer del archivo a un stream de lectura para enviarlo a Cloudinary
+    streamifier.createReadStream(req.file.buffer).pipe(cld_upload_stream);
+});
 module.exports = imagenesRouter;
