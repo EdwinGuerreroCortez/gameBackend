@@ -1,4 +1,3 @@
-//models/usuarios
 const mongoose = require('mongoose');
 
 const usuarioSchema = new mongoose.Schema({
@@ -71,28 +70,29 @@ const usuarioSchema = new mongoose.Schema({
     {
       tema_id: {
         type: mongoose.Schema.Types.ObjectId,
+        ref: 'Evaluacion',
         required: true,
-        default: null // valor predeterminado para administradores
       },
-      preguntas_respondidas: [
-        {
-          pregunta_id: {
-            type: mongoose.Schema.Types.ObjectId,
-            required: true,
-            default: null // valor predeterminado para administradores
-          },
-          respuesta_elegida: {
-            type: String,
-            required: true,
-            default: 'N/A' // valor predeterminado para administradores
-          },
-        },
-      ],
       calificacion: {
         type: Number,
         required: true,
-        default: 0 // valor predeterminado para administradores
       },
+      preguntas_respondidas: [
+        {
+          pregunta: {
+            type: String,
+            required: true,
+          },
+          respuesta: {
+            type: String,
+            required: true,
+          },
+          correcta: {
+            type: Boolean,
+            required: true,
+          },
+        },
+      ],
     },
   ],
   rol: {

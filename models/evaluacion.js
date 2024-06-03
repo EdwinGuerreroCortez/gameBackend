@@ -1,9 +1,11 @@
+  //models/evaluacion.js
+
 const mongoose = require('mongoose');
 
 const evaluacionSchema = new mongoose.Schema({
   tema_id: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Tema', // Asegúrate de tener un modelo Tema
+    ref: 'Tema',
     required: true
   },
   evaluacion: [

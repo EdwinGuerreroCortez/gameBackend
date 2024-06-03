@@ -1,3 +1,4 @@
+  //routes/temaRoutes.js
 const express = require('express');
 const multer = require('multer');
 const XLSX = require('xlsx');
@@ -97,10 +98,10 @@ router.post('/upload-excel-video', upload.fields([{ name: 'file', maxCount: 1 },
   }
 });
 
-// Endpoint para obtener todos los temas
+// Endpoint para obtener todos los temas sin evaluación asociada
 router.get('/temas', async (req, res) => {
   try {
-    const temas = await Tema.find();
+    const temas = await Tema.find({ evaluacion_id: { $exists: false } });
     res.json(temas);
   } catch (error) {
     res.status(500).json({ message: error.message });

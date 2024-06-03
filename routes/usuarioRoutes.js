@@ -156,7 +156,29 @@ router.delete('/usuarios/:id', async (req, res) => {
         res.status(500).json({ message: 'Error al eliminar usuario', error: error.message });
     }
 });
-
-
-
+router.post('/usuarios/:id/evaluaciones', async (req, res) => {
+    try {
+      const { evaluacionId, calificacion, respuestas } = req.body;
+      const usuario = await Usuario.findById(req.params.id);
+  
+      if (!usuario) {
+        return res.status(404).json({ message: 'Usuario no encontrado' });
+      }
+  
+      // Verificar si la evaluación ya fue realizada
+      const evaluacionRealizada = usuario.evaluaciones_realizadas.find(evaluacion => evaluacion.tema_id.toString() === evaluacionId);
+      if (evaluacionRealizada) {
+        return res.status(400).json({ message: 'La evaluación ya ha sido realizada' });
+      }
+  
+      // Guardar la nueva evaluación realizada
+      usuario.evaluaciones_realizadas.push({ tema_id: evaluacionId, calificacion, preguntas_respondidas: respuestas });
+      await usuario.save();
+  
+      res.status(200).json({ message: 'Calificación guardada exitosamente' });
+    } catch (error) {
+      res.status(500).json({ message: 'Error al guardar la calificación', error });
+    }
+  });
+  
 module.exports = router;

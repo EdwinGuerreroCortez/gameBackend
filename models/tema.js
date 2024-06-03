@@ -12,6 +12,11 @@ const temaSchema = new mongoose.Schema({
   autor: String,
   pasos: [pasoSchema],
   video: { type: String, default: null },
+  evaluacion_id: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Evaluacion',
+    default: null
+  }
 });
 
 const Tema = mongoose.model('Tema', temaSchema);
