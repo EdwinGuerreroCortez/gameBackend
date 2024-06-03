@@ -101,12 +101,18 @@ router.post('/upload-excel-video', upload.fields([{ name: 'file', maxCount: 1 },
 // Endpoint para obtener todos los temas sin evaluación asociada
 router.get('/temas', async (req, res) => {
   try {
-    const temas = await Tema.find({ evaluacion_id: { $exists: false } });
+    const { sinEvaluacion } = req.query;
+    let filter = {};
+    if (sinEvaluacion) {
+      filter = { evaluacion_id: { $exists: false } };
+    }
+    const temas = await Tema.find(filter);
     res.json(temas);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });
+
 
 // Endpoint para eliminar un tema por ID
 router.delete('/temas/:id', async (req, res) => {
