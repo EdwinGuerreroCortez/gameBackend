@@ -5,6 +5,29 @@ const Evaluacion = require('../models/evaluacion');
 const Tema = require('../models/tema');
 const upload = require('../middleware/upload');
 
+// Función para validar los datos del Excel
+const validateExcelData = (data) => {
+  const requiredFields = ['pregunta', 'opciones', 'respuesta_correcta'];
+  let errors = [];
+
+  data.forEach((row, rowIndex) => {
+    requiredFields.forEach((field) => {
+      if (!row[field] || row[field].trim() === '') {
+        errors.push(`La fila ${rowIndex + 2} tiene el campo "${field}" vacío.`); // Ajuste del índice para coincidir con la fila real en Excel
+      }
+    });
+
+    if (row.opciones) {
+      const opciones = row.opciones.split(',').map(opcion => opcion.trim());
+      if (opciones.length !== 4) {
+        errors.push(`La fila ${rowIndex + 2} debe tener exactamente 4 opciones, pero tiene ${opciones.length}.`);
+      }
+    }
+  });
+
+  return errors;
+};
+
 // Ruta para cargar archivo Excel
 router.post('/evaluaciones/upload', upload.single('file'), async (req, res) => {
   try {
@@ -15,6 +38,12 @@ router.post('/evaluaciones/upload', upload.single('file'), async (req, res) => {
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
     const data = xlsx.utils.sheet_to_json(worksheet);
+
+    // Validar los datos del Excel
+    const validationErrors = validateExcelData(data);
+    if (validationErrors.length > 0) {
+      return res.status(400).json({ error: 'Errores de validación en el archivo Excel.', details: validationErrors });
+    }
 
     const nuevasEvaluaciones = data.map(item => ({
       pregunta: item.pregunta,

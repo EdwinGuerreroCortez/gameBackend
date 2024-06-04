@@ -1,4 +1,4 @@
-  //routes/temaRoutes.js
+// routes/temaRoutes.js
 const express = require('express');
 const multer = require('multer');
 const XLSX = require('xlsx');
@@ -28,6 +28,19 @@ const cleanColumnNames = (data) => {
   return cleanedData;
 };
 
+// Función para validar los datos del Excel
+const validateExcelData = (data, requiredColumns) => {
+  let errors = [];
+
+  requiredColumns.forEach(column => {
+    if (!data.hasOwnProperty(column) || !data[column].trim()) {
+      errors.push(`El campo "${column}" es obligatorio y no puede estar vacío.`);
+    }
+  });
+
+  return errors;
+};
+
 // Endpoint para subir un archivo Excel y un video, y procesarlos
 router.post('/upload-excel-video', upload.fields([{ name: 'file', maxCount: 1 }, { name: 'video', maxCount: 1 }]), (req, res) => {
   try {
@@ -50,6 +63,15 @@ router.post('/upload-excel-video', upload.fields([{ name: 'file', maxCount: 1 },
     let data = json[0];
     data = cleanColumnNames(data);
     console.log('Datos procesados del Excel:', data);
+
+    // Columnas requeridas en el formato correcto
+    const requiredColumns = ['titulo', 'descripcion', 'autor', 'pasoTitulo1', 'pasoDescripcion1'];
+
+    // Validar los datos del Excel
+    const validationErrors = validateExcelData(data, requiredColumns);
+    if (validationErrors.length > 0) {
+      return res.status(400).json({ error: 'Errores de validación en el archivo Excel.', details: validationErrors });
+    }
 
     const pasos = [];
     let i = 1;
@@ -113,7 +135,6 @@ router.get('/temas', async (req, res) => {
   }
 });
 
-
 // Endpoint para eliminar un tema por ID
 router.delete('/temas/:id', async (req, res) => {
   try {
@@ -126,6 +147,38 @@ router.delete('/temas/:id', async (req, res) => {
     res.json({ message: 'Tema eliminado con éxito' });
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+});
+// Endpoint para generar y descargar el archivo Excel basado en el tema seleccionado
+router.get('/download-tema/:id', async (req, res) => {
+  try {
+    const tema = await Tema.findById(req.params.id);
+    if (!tema) {
+      return res.status(404).json({ message: 'Tema no encontrado' });
+    }
+
+    // Crear un nuevo libro de trabajo y una hoja de trabajo
+    const workbook = XLSX.utils.book_new();
+    const worksheetData = [
+      { titulo: tema.titulo, descripcion: tema.descripcion, autor: tema.autor }
+    ];
+
+    tema.pasos.forEach((paso, index) => {
+      worksheetData[0][`pasoTitulo${index + 1}`] = paso.Titulo;
+      worksheetData[0][`pasoDescripcion${index + 1}`] = paso.Descripcion;
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(worksheetData);
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Tema');
+
+    // Enviar el archivo Excel al cliente
+    const buffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'buffer' });
+    res.setHeader('Content-Disposition', `attachment; filename=${tema.titulo}.xlsx`);
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.send(buffer);
+  } catch (error) {
+    console.error('Error generando el archivo Excel:', error);
+    res.status(500).json({ error: 'Error generando el archivo Excel' });
   }
 });
 
