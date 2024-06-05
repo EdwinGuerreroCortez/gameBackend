@@ -174,6 +174,25 @@ router.put('/evaluaciones/:id', upload.single('file'), async (req, res) => {
     console.error('Error al actualizar la evaluación:', error);
     res.status(500).json({ message: 'Error al actualizar la evaluación', error });
   }
+});// Ruta para descargar la plantilla de cuestionario
+router.get('/evaluaciones/plantilla', (req, res) => {
+  try {
+    const data = [
+      { pregunta: 'Pregunta de ejemplo', opciones: 'Opción 1, Opción 2, Opción 3, Opción 4', respuesta_correcta: 'Opción 1' }
+    ];
+
+    const workbook = xlsx.utils.book_new();
+    const worksheet = xlsx.utils.json_to_sheet(data);
+    xlsx.utils.book_append_sheet(workbook, worksheet, 'Plantilla');
+
+    const buffer = xlsx.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+    res.setHeader('Content-Disposition', 'attachment; filename=Plantilla_Cuestionario.xlsx');
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.send(buffer);
+  } catch (error) {
+    console.error('Error al generar la plantilla:', error);
+    res.status(500).json({ message: 'Error al generar la plantilla', error });
+  }
 });
 
 module.exports = router;
