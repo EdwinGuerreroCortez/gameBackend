@@ -194,5 +194,23 @@ router.get('/evaluaciones/plantilla', (req, res) => {
     res.status(500).json({ message: 'Error al generar la plantilla', error });
   }
 });
+router.get('/evaluaciones/:temaId', async (req, res) => {
+  try {
+    const { temaId } = req.params;
+    const limit = parseInt(req.query.limit, 10) || 10;
+    const evaluacion = await Evaluacion.findOne({ tema_id: temaId });
+
+    if (!evaluacion) {
+      return res.status(404).json({ message: 'Evaluación no encontrada' });
+    }
+
+    // Shuffle the questions and return the limited amount
+    const shuffledEvaluacion = evaluacion.evaluacion.sort(() => 0.5 - Math.random()).slice(0, limit);
+
+    res.json({ evaluacion: shuffledEvaluacion });
+  } catch (error) {
+    res.status(500).json({ message: 'Error al obtener la evaluación', error });
+  }
+});
 
 module.exports = router;
