@@ -11,10 +11,10 @@ const validateEvaluaciones = (evaluaciones) => {
   evaluaciones.forEach((eval, index) => {
     const { pregunta, opciones, respuesta_correcta } = eval;
     if (!pregunta) {
-      errors.push(`Pregunta vacía en la fila ${index + 2}`);
+      errors.push(`Pregunta ${index + 1} vacía`);
     }
     if (!respuesta_correcta) {
-      errors.push(`Respuesta correcta vacía en la fila ${index + 2}`);
+      errors.push(`La respuesta de la pregunta ${index + 1} esta vacía`);
     }
     if (!opciones || opciones.length !== 4) {
       errors.push(`Número incorrecto de opciones en la fila ${index + 2} (debe haber 4 opciones)`);
@@ -145,30 +145,29 @@ router.put('/evaluaciones/:id', upload.single('file'), async (req, res) => {
     const tema_id = req.body.tema;
     const buffer = req.file ? req.file.buffer : null;
 
+    let nuevasEvaluaciones = req.body.evaluacion ? JSON.parse(req.body.evaluacion) : null;
     if (buffer) {
       const workbook = xlsx.read(buffer, { type: 'buffer' });
       const sheetName = workbook.SheetNames[0];
       const worksheet = workbook.Sheets[sheetName];
       const data = xlsx.utils.sheet_to_json(worksheet);
 
-      const nuevasEvaluaciones = data.map(item => ({
+      nuevasEvaluaciones = data.map(item => ({
         pregunta: item.pregunta,
         opciones: item.opciones.split(',').map(opcion => opcion.trim()),
         respuesta_correcta: item.respuesta_correcta
       }));
-
-      const validationErrors = validateEvaluaciones(nuevasEvaluaciones);
-      if (validationErrors.length > 0) {
-        return res.status(400).json({ message: 'Errores de validación', details: validationErrors });
-      }
-
-      await Evaluacion.findByIdAndUpdate(evaluacionId, {
-        tema_id: tema_id,
-        evaluacion: nuevasEvaluaciones
-      });
-    } else {
-      await Evaluacion.findByIdAndUpdate(evaluacionId, { tema_id: tema_id });
     }
+
+    const validationErrors = validateEvaluaciones(nuevasEvaluaciones);
+    if (validationErrors.length > 0) {
+      return res.status(400).json({ message: 'Errores de validación', details: validationErrors });
+    }
+
+    await Evaluacion.findByIdAndUpdate(evaluacionId, {
+      tema_id: tema_id,
+      evaluacion: nuevasEvaluaciones
+    });
 
     res.status(200).json({ message: 'Evaluación actualizada exitosamente' });
   } catch (error) {
@@ -176,5 +175,5 @@ router.put('/evaluaciones/:id', upload.single('file'), async (req, res) => {
     res.status(500).json({ message: 'Error al actualizar la evaluación', error });
   }
 });
-//
+
 module.exports = router;
