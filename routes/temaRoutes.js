@@ -1,4 +1,3 @@
-// routes/temaRoutes.js
 const express = require('express');
 const multer = require('multer');
 const XLSX = require('xlsx');
@@ -181,8 +180,6 @@ router.get('/download-tema/:id', async (req, res) => {
 // Endpoint para actualizar un tema con validación
 router.put('/temas/:id', upload.none(), async (req, res) => {
   try {
-    console.log('Request Body:', req.body); // Log the request body
-
     const { titulo, descripcion, autor, pasos } = req.body;
     const requiredFields = { titulo, descripcion, autor };
     const errors = [];
@@ -233,5 +230,31 @@ router.put('/temas/:id', upload.none(), async (req, res) => {
   }
 });
 
-module.exports = router;
+// Endpoint para descargar la plantilla de tema en Excel
+router.get('/download-plantilla', (req, res) => {
+  // Crear un nuevo libro de trabajo y una hoja de trabajo con la estructura de la plantilla
+  const workbook = XLSX.utils.book_new();
+  const worksheetData = [
+    {
+      titulo: 'Ejemplo de Título',
+      descripcion: 'Descripción del tema',
+      autor: 'Autor del tema',
+      pasoTitulo1: 'Título del Paso 1',
+      pasoDescripcion1: 'Descripción del Paso 1',
+      pasoTitulo2: 'Título del Paso 2 (Opcional)',
+      pasoDescripcion2: 'Descripción del Paso 2 (Opcional)',
+      // Puedes añadir más pasos según sea necesario
+    }
+  ];
 
+  const worksheet = XLSX.utils.json_to_sheet(worksheetData);
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'Plantilla_Tema');
+
+  // Enviar el archivo Excel al cliente
+  const buffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'buffer' });
+  res.setHeader('Content-Disposition', 'attachment; filename=Plantilla_tema.xlsx');
+  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  res.send(buffer);
+});
+
+module.exports = router;
