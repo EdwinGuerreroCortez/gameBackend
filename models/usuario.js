@@ -73,7 +73,7 @@ const usuarioSchema = new mongoose.Schema({
         ref: 'Evaluacion',
         required: true,
       },
-      calificacion: {
+      porcentaje: {
         type: Number,
         required: true,
       },

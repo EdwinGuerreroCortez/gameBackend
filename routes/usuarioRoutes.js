@@ -156,9 +156,10 @@ router.delete('/usuarios/:id', async (req, res) => {
         res.status(500).json({ message: 'Error al eliminar usuario', error: error.message });
     }
 });
+// Endpoint para guardar resultados de evaluaciones
 router.post('/usuarios/:id/evaluaciones', async (req, res) => {
     try {
-      const { temaId, calificacion, preguntasRespondidas } = req.body;
+      const { temaId, porcentaje, preguntasRespondidas } = req.body;
       const usuario = await Usuario.findById(req.params.id);
   
       if (!usuario) {
@@ -167,15 +168,16 @@ router.post('/usuarios/:id/evaluaciones', async (req, res) => {
   
       usuario.evaluaciones_realizadas.push({
         tema_id: temaId,
-        calificacion,
+        porcentaje,
         preguntas_respondidas: preguntasRespondidas,
       });
   
       await usuario.save();
   
-      res.status(200).json({ message: 'Calificación guardada exitosamente' });
+      res.status(200).json({ message: 'Evaluación guardada exitosamente' });
     } catch (error) {
       res.status(500).json({ message: error.message });
     }
   });
+  
 module.exports = router;
