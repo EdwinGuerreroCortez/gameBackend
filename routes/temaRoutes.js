@@ -13,9 +13,9 @@ const upload = multer({ storage: storage });
 
 // Configurar las credenciales de Cloudinary usando variables de entorno
 cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET,
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
 // Función para limpiar los nombres de las columnas
@@ -144,6 +144,7 @@ router.delete('/temas/:id', async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
+
 // Endpoint para generar y descargar el archivo Excel basado en el tema seleccionado
 router.get('/download-tema/:id', async (req, res) => {
   try {
@@ -177,4 +178,60 @@ router.get('/download-tema/:id', async (req, res) => {
   }
 });
 
+// Endpoint para actualizar un tema con validación
+router.put('/temas/:id', upload.none(), async (req, res) => {
+  try {
+    console.log('Request Body:', req.body); // Log the request body
+
+    const { titulo, descripcion, autor, pasos } = req.body;
+    const requiredFields = { titulo, descripcion, autor };
+    const errors = [];
+
+    // Validar campos obligatorios
+    Object.keys(requiredFields).forEach(field => {
+      if (!requiredFields[field] || requiredFields[field].trim() === '') {
+        errors.push(`El campo "${field}" es obligatorio y no puede estar vacío.`);
+      }
+    });
+
+    // Validar pasos
+    const parsedPasos = JSON.parse(pasos);
+    if (parsedPasos.length === 0) {
+      errors.push('Debe haber al menos un paso definido.');
+    }
+
+    parsedPasos.forEach((paso, index) => {
+      if (!paso.Titulo || paso.Titulo.trim() === '') {
+        errors.push(`El Título del paso ${index + 1} es obligatorio y no puede estar vacío.`);
+      }
+      if (!paso.Descripcion || paso.Descripcion.trim() === '') {
+        errors.push(`La Descripción del paso ${index + 1} es obligatoria y no puede estar vacía.`);
+      }
+    });
+
+    if (errors.length > 0) {
+      console.log('Validation Errors:', errors); // Log validation errors
+      return res.status(400).json({ error: 'Errores de validación', details: errors });
+    }
+
+    const tema = await Tema.findById(req.params.id);
+    if (!tema) {
+      return res.status(404).json({ message: 'Tema no encontrado' });
+    }
+
+    // Actualizar el tema con los nuevos datos
+    tema.titulo = titulo;
+    tema.descripcion = descripcion;
+    tema.autor = autor;
+    tema.pasos = parsedPasos;
+
+    const updatedTema = await tema.save();
+    res.json(updatedTema);
+  } catch (error) {
+    console.error('Error actualizando el tema:', error);
+    res.status(500).json({ message: 'Error actualizando el tema', details: error.message });
+  }
+});
+
 module.exports = router;
+
