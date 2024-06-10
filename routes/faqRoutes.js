@@ -12,10 +12,13 @@ router.get('/faqs', async (req, res) => {
   }
 });
 
-// Endpoint para crear una nueva FAQ
+// Endpoint para crear una nueva FAQ (solo pregunta)
 router.post('/faqs', async (req, res) => {
   try {
-    const nuevaFaq = new Faq(req.body);
+    const nuevaFaq = new Faq({
+      pregunta: req.body.pregunta,
+      respuesta: null, // La respuesta es nula al crear una nueva pregunta
+    });
     await nuevaFaq.save();
     res.status(201).json(nuevaFaq);
   } catch (error) {

@@ -7,7 +7,7 @@ const faqSchema = new mongoose.Schema({
   },
   respuesta: {
     type: String,
-    required: true,
+    default: null, // La respuesta puede ser nula inicialmente
   }
 });
 
