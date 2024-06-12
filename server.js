@@ -4,7 +4,6 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const userRoutes = require('./routes/usuarioRoutes');
 const imagenesRouter = require('./routes/crudImagenes');
-const faqRoutes = require('./routes/faqRoutes');//anteriormente usado para las preguntas frecuentes
 const contactRoutes = require('./routes/contact');//nuevo contactanos
 const misionVisionRoutes = require('./routes/misionVisionRoutes'); 
 const temaRoutes = require('./routes/temaRoutes'); // Importar rutas de temas
@@ -25,7 +24,6 @@ mongoose.connect(process.env.MONGODB_URI)
 // Rutas
 app.use('/api/', userRoutes);
 app.use('/api/imagenes', imagenesRouter);
-app.use('/api', faqRoutes);//preguntas frecuentes anteriormete
 app.use('/api', contactRoutes);
 app.use('/api', misionVisionRoutes);
 app.use('/api', temaRoutes); // Usar rutas de temas
