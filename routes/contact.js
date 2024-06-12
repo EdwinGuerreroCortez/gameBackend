@@ -135,6 +135,21 @@ router.put('/contact/messages/questions/:id', async (req, res) => {
     }
 });
 
+// Endpoint para obtener el último mensaje agregado
+router.get('/contact/latest', async (req, res) => {
+    try {
+        const latestMessage = await ContactMessage.findOne().sort({ _id: -1 });
+        if (!latestMessage) {
+            console.log('No hay mensajes disponibles');
+            return res.status(404).json({ message: 'No hay mensajes disponibles' });
+        }
+        console.log('Último mensaje encontrado:', latestMessage);
+        res.json(latestMessage);
+    } catch (error) {
+        console.error('Error al obtener el último mensaje:', error);
+        res.status(500).json({ message: 'Error interno del servidor' });
+    }
+});
 
 
 module.exports = router;
