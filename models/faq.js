@@ -8,7 +8,7 @@ const faqSchema = new mongoose.Schema({
   respuesta: {
     type: String,
     default: null, // La respuesta puede ser nula inicialmente
-  }
+  }, 
 });
 
 const Faq = mongoose.model('Faq', faqSchema);
