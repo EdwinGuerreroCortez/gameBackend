@@ -118,7 +118,6 @@ router.post('/contact/messages/complaints', async (req, res) => {
 // Endpoint para responder a una pregunta de contacto
 router.put('/contact/messages/questions/:id', async (req, res) => {
     try {
-        console.log('Datos recibidos para actualizar:', req.body); // Añadido para depuración
         const message = await ContactMessage.findById(req.params.id);
         if (!message) {
             return res.status(404).json({ message: 'Pregunta no encontrada' });
