@@ -1,9 +1,9 @@
 const express = require('express');
 const multer = require('multer');
-const XLSX = require('xlsx');
-const Tema = require('../models/tema');
 const cloudinary = require('cloudinary').v2;
 const streamifier = require('streamifier');
+const XLSX = require('xlsx');
+const Tema = require('../models/tema');
 const router = express.Router();
 
 // Configuración de multer
@@ -41,7 +41,7 @@ const validateExcelData = (data, requiredColumns) => {
 };
 
 // Endpoint para subir un archivo Excel y un video, y procesarlos
-router.post('/upload-excel-video', upload.fields([{ name: 'file', maxCount: 1 }, { name: 'video', maxCount: 1 }]), (req, res) => {
+router.post('/upload-excel-video', upload.fields([{ name: 'file', maxCount: 1 }, { name: 'video', maxCount: 1 }]), async (req, res) => {
   try {
     if (!req.files || !req.files['file'] || !req.files['video']) {
       return res.status(400).json({ error: 'Archivo Excel y/o video no proporcionados.' });
@@ -59,63 +59,121 @@ router.post('/upload-excel-video', upload.fields([{ name: 'file', maxCount: 1 },
       return res.status(400).json({ error: 'El archivo Excel está vacío o tiene un formato incorrecto.' });
     }
 
-    let data = json[0];
-    data = cleanColumnNames(data);
-    console.log('Datos procesados del Excel:', data);
+    let temas = [];
+    let currentTema = null;
 
-    // Columnas requeridas en el formato correcto
-    const requiredColumns = ['titulo', 'descripcion', 'autor', 'pasoTitulo1', 'pasoDescripcion1'];
+    json.forEach((row) => {
+      row = cleanColumnNames(row);
 
-    // Validar los datos del Excel
-    const validationErrors = validateExcelData(data, requiredColumns);
+      if (row['titulo']) {
+        if (currentTema) {
+          temas.push(currentTema);
+        }
+        currentTema = {
+          titulo: row['titulo'],
+          descripcion: row['descripcion'],
+          responsable: row['responsable'],
+          bibliografia: row['bibliografia'],
+          pasos: [],
+        };
+      }
+
+      if (currentTema) {
+        currentTema.pasos.push({ Titulo: row['pasoTitulo'], Descripcion: row['pasoDescripcion'] });
+      }
+    });
+
+    if (currentTema) {
+      temas.push(currentTema);
+    }
+
+    const validationErrors = temas.map((tema) =>
+      validateExcelData(tema, ['titulo', 'descripcion', 'responsable', 'bibliografia'])
+    ).flat();
+
     if (validationErrors.length > 0) {
       return res.status(400).json({ error: 'Errores de validación en el archivo Excel.', details: validationErrors });
     }
 
-    const pasos = [];
-    let i = 1;
-    while (data[`pasoTitulo${i}`] && data[`pasoDescripcion${i}`]) {
-      pasos.push({ Titulo: data[`pasoTitulo${i}`].trim(), Descripcion: data[`pasoDescripcion${i}`].trim() });
-      i++;
-    }
+    const uploadVideo = (tema) => {
+      return new Promise((resolve, reject) => {
+        const cld_upload_stream = cloudinary.uploader.upload_stream(
+          { resource_type: 'video', folder: 'videos' },
+          (error, result) => {
+            if (error) {
+              reject(error);
+            } else {
+              resolve(result.secure_url);
+            }
+          }
+        );
+        streamifier.createReadStream(videoFile.buffer).pipe(cld_upload_stream);
+      });
+    };
 
-    console.log('Pasos extraídos:', pasos);
-
-    // Crear un stream de carga para Cloudinary para el video
-    const cld_upload_stream = cloudinary.uploader.upload_stream(
-      { resource_type: 'video', folder: 'videos' },
-      (error, result) => {
-        if (error) {
-          console.error('Error al subir el video:', error);
-          return res.status(500).json({ error: error.message });
-        }
-
-        // Crear y guardar el nuevo tema con la URL del video
-        const tema = new Tema({
-          titulo: data.titulo,
-          descripcion: data.descripcion,
-          autor: data.autor,
-          pasos: pasos,
-          video: result.secure_url,
-        });
-
-        tema.save()
-          .then((savedTema) => {
-            console.log('Tema guardado:', savedTema);
-            res.status(200).json(savedTema);
-          })
-          .catch((error) => {
-            console.error('Error guardando el tema:', error);
-            res.status(500).json({ error: 'Error subiendo datos: ' + error });
-          });
+    const saveTema = async (tema) => {
+      try {
+        const videoUrl = await uploadVideo(tema);
+        const newTema = new Tema({ ...tema, video: videoUrl, evaluacion_id: null });
+        return await newTema.save();
+      } catch (error) {
+        throw new Error(`Error guardando el tema: ${error.message}`);
       }
-    );
+    };
 
-    // Conectar el buffer del archivo de video a un stream de lectura para enviarlo a Cloudinary
-    streamifier.createReadStream(videoFile.buffer).pipe(cld_upload_stream);
+    Promise.all(temas.map(saveTema))
+      .then((savedTemas) => {
+        res.status(200).json(savedTemas);
+      })
+      .catch((error) => {
+        console.error('Error guardando los temas:', error);
+        res.status(500).json({ error: 'Error guardando los temas: ' + error.message });
+      });
   } catch (error) {
     console.error('Error procesando los archivos:', error);
     res.status(500).json({ error: 'Error procesando los archivos: ' + error });
+  }
+});
+
+// Endpoint para subir un video para un tema
+router.post('/upload-video/:id', upload.single('video'), async (req, res) => {
+  try {
+    const temaId = req.params.id;
+    const videoFile = req.file;
+
+    if (!videoFile) {
+      return res.status(400).json({ error: 'No se ha proporcionado ningún video.' });
+    }
+
+    const tema = await Tema.findById(temaId);
+    if (!tema) {
+      return res.status(404).json({ message: 'Tema no encontrado' });
+    }
+
+    const uploadVideo = () => {
+      return new Promise((resolve, reject) => {
+        const cld_upload_stream = cloudinary.uploader.upload_stream(
+          { resource_type: 'video', folder: 'videos' },
+          (error, result) => {
+            if (error) {
+              reject(error);
+            } else {
+              resolve(result.secure_url);
+            }
+          }
+        );
+        streamifier.createReadStream(videoFile.buffer).pipe(cld_upload_stream);
+      });
+    };
+
+    const videoUrl = await uploadVideo();
+    tema.video = videoUrl;
+    await tema.save();
+
+    res.status(200).json({ videoUrl });
+  } catch (error) {
+    console.error('Error subiendo el video:', error);
+    res.status(500).json({ error: 'Error subiendo el video. Inténtalo de nuevo.' });
   }
 });
 
@@ -155,7 +213,7 @@ router.get('/download-tema/:id', async (req, res) => {
     // Crear un nuevo libro de trabajo y una hoja de trabajo
     const workbook = XLSX.utils.book_new();
     const worksheetData = [
-      { titulo: tema.titulo, descripcion: tema.descripcion, autor: tema.autor }
+      { titulo: tema.titulo, descripcion: tema.descripcion, responsable: tema.responsable, bibliografia: tema.bibliografia }
     ];
 
     tema.pasos.forEach((paso, index) => {
@@ -180,8 +238,8 @@ router.get('/download-tema/:id', async (req, res) => {
 // Endpoint para actualizar un tema con validación
 router.put('/temas/:id', upload.none(), async (req, res) => {
   try {
-    const { titulo, descripcion, autor, pasos } = req.body;
-    const requiredFields = { titulo, descripcion, autor };
+    const { titulo, descripcion, responsable, bibliografia, pasos } = req.body;
+    const requiredFields = { titulo, descripcion, responsable, bibliografia };
     const errors = [];
 
     // Validar campos obligatorios
@@ -219,7 +277,8 @@ router.put('/temas/:id', upload.none(), async (req, res) => {
     // Actualizar el tema con los nuevos datos
     tema.titulo = titulo;
     tema.descripcion = descripcion;
-    tema.autor = autor;
+    tema.responsable = responsable;
+    tema.bibliografia = bibliografia;
     tema.pasos = parsedPasos;
 
     const updatedTema = await tema.save();
@@ -238,7 +297,8 @@ router.get('/download-plantilla', (req, res) => {
     {
       titulo: 'Ejemplo de Título',
       descripcion: 'Descripción del tema',
-      autor: 'Autor del tema',
+      responsable: 'Responsable del tema',
+      bibliografia: 'Bibliografía del tema',
       pasoTitulo1: 'Título del Paso 1',
       pasoDescripcion1: 'Descripción del Paso 1',
       pasoTitulo2: 'Título del Paso 2 (Opcional)',
@@ -255,6 +315,31 @@ router.get('/download-plantilla', (req, res) => {
   res.setHeader('Content-Disposition', 'attachment; filename=Plantilla_tema.xlsx');
   res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
   res.send(buffer);
+});
+
+// Endpoint para subir todos los temas
+router.post('/subir-temas', async (req, res) => {
+  const { temas } = req.body;
+
+  try {
+    const savedTemas = await Promise.all(temas.map(async (tema) => {
+      const newTema = new Tema({
+        titulo: tema.titulo,
+        descripcion: tema.descripcion,
+        responsable: tema.responsable,
+        bibliografia: tema.bibliografia,
+        pasos: tema.pasos,
+        video: null,
+        evaluacion_id: null,
+      });
+      return await newTema.save();
+    }));
+
+    res.status(200).json(savedTemas);
+  } catch (error) {
+    console.error('Error guardando los temas:', error);
+    res.status(500).json({ error: 'Error guardando los temas: ' + error.message });
+  }
 });
 
 module.exports = router;
