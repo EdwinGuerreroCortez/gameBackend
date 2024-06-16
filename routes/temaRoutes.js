@@ -6,18 +6,15 @@ const XLSX = require('xlsx');
 const Tema = require('../models/tema');
 const router = express.Router();
 
-// Configuración de multer
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
-// Configurar las credenciales de Cloudinary usando variables de entorno
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-// Función para limpiar los nombres de las columnas
 const cleanColumnNames = (data) => {
   const cleanedData = {};
   for (const key in data) {
@@ -27,7 +24,6 @@ const cleanColumnNames = (data) => {
   return cleanedData;
 };
 
-// Función para validar los datos del Excel
 const validateExcelData = (data, requiredColumns) => {
   let errors = [];
 
@@ -39,7 +35,6 @@ const validateExcelData = (data, requiredColumns) => {
 
   return errors;
 };
-
 // Endpoint para subir un archivo Excel y un video, y procesarlos
 router.post('/upload-excel-video', upload.fields([{ name: 'file', maxCount: 1 }, { name: 'video', maxCount: 1 }]), async (req, res) => {
   try {
@@ -242,14 +237,12 @@ router.put('/temas/:id', upload.none(), async (req, res) => {
     const requiredFields = { titulo, descripcion, responsable, bibliografia };
     const errors = [];
 
-    // Validar campos obligatorios
     Object.keys(requiredFields).forEach(field => {
       if (!requiredFields[field] || requiredFields[field].trim() === '') {
         errors.push(`El campo "${field}" es obligatorio y no puede estar vacío.`);
       }
     });
 
-    // Validar pasos
     const parsedPasos = JSON.parse(pasos);
     if (parsedPasos.length === 0) {
       errors.push('Debe haber al menos un paso definido.');
@@ -265,7 +258,7 @@ router.put('/temas/:id', upload.none(), async (req, res) => {
     });
 
     if (errors.length > 0) {
-      console.log('Validation Errors:', errors); // Log validation errors
+      console.log('Validation Errors:', errors);
       return res.status(400).json({ error: 'Errores de validación', details: errors });
     }
 
@@ -274,7 +267,6 @@ router.put('/temas/:id', upload.none(), async (req, res) => {
       return res.status(404).json({ message: 'Tema no encontrado' });
     }
 
-    // Actualizar el tema con los nuevos datos
     tema.titulo = titulo;
     tema.descripcion = descripcion;
     tema.responsable = responsable;
@@ -288,6 +280,8 @@ router.put('/temas/:id', upload.none(), async (req, res) => {
     res.status(500).json({ message: 'Error actualizando el tema', details: error.message });
   }
 });
+
+
 
 // Endpoint para descargar la plantilla de tema en Excel
 router.get('/download-plantilla', (req, res) => {
