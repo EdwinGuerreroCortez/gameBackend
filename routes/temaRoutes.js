@@ -335,5 +335,61 @@ router.post('/subir-temas', async (req, res) => {
     res.status(500).json({ error: 'Error guardando los temas: ' + error.message });
   }
 });
+// Endpoint para subir un tema con video y pasos
+router.post('/subirTema', upload.single('video'), async (req, res) => {
+  try {
+    const { titulo, descripcion, responsable, bibliografia, pasos } = req.body;
+    const videoFile = req.file;
+
+    if (!titulo || !descripcion || !responsable || !bibliografia) {
+      return res.status(400).json({ error: 'Todos los campos son obligatorios' });
+    }
+
+    const parsedPasos = JSON.parse(pasos);
+    if (parsedPasos.length === 0) {
+      return res.status(400).json({ error: 'Debe haber al menos un paso definido.' });
+    }
+
+    for (const paso of parsedPasos) {
+      if (!paso.Titulo || !paso.Descripcion) {
+        return res.status(400).json({ error: 'Cada paso debe tener un título y una descripción.' });
+      }
+    }
+
+    const uploadVideo = () => {
+      return new Promise((resolve, reject) => {
+        const cld_upload_stream = cloudinary.uploader.upload_stream(
+          { resource_type: 'video', folder: 'videos' },
+          (error, result) => {
+            if (error) {
+              reject(error);
+            } else {
+              resolve(result.secure_url);
+            }
+          }
+        );
+        streamifier.createReadStream(videoFile.buffer).pipe(cld_upload_stream);
+      });
+    };
+
+    const videoUrl = await uploadVideo();
+    const newTema = new Tema({
+      titulo,
+      descripcion,
+      responsable,
+      bibliografia,
+      pasos: parsedPasos,
+      video: videoUrl,
+      evaluacion_id: null,
+      fecha_creacion: new Date(),
+    });
+
+    const savedTema = await newTema.save();
+    res.status(200).json(savedTema);
+  } catch (error) {
+    console.error('Error creando el tema:', error);
+    res.status(500).json({ error: 'Error creando el tema. Inténtalo de nuevo.' });
+  }
+});
 
 module.exports = router;
