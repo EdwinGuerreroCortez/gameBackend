@@ -11,21 +11,40 @@ const validateEvaluaciones = (evaluaciones) => {
   const errors = [];
   evaluaciones.forEach((eval, index) => {
     const { pregunta, opciones, respuesta_correcta } = eval;
-    if (!pregunta) {
-      errors.push(`Pregunta ${index + 1} vacía`);
+
+    if (!pregunta || pregunta.trim() === '') {
+      errors.push(`La pregunta en la fila ${index + 2} está vacía`);
     }
-    if (!respuesta_correcta) {
-      errors.push(`La respuesta de la pregunta ${index + 1} esta vacía`);
+
+    if (!respuesta_correcta || respuesta_correcta.trim() === '') {
+      errors.push(`La respuesta correcta en la fila ${index + 2} está vacía`);
     }
+
     if (!opciones || opciones.length !== 4) {
       errors.push(`Número incorrecto de opciones en la fila ${index + 2} (debe haber 4 opciones)`);
     }
-    if (opciones && opciones.includes('')) {
-      errors.push(`Opciones vacías en la fila ${index + 2}`);
+
+    if (opciones) {
+      opciones.forEach((opcion, i) => {
+        if (!opcion || opcion.trim() === '') {
+          errors.push(`La opción ${String.fromCharCode(97 + i)} en la fila ${index + 2} está vacía`);
+        }
+      });
+    }
+
+    if (new Set(opciones).size !== opciones.length) {
+      errors.push(`Opciones duplicadas en la fila ${index + 2}`);
+    }
+
+    if (!opciones.includes(respuesta_correcta)) {
+      errors.push(`La respuesta correcta en la fila ${index + 2} no coincide con ninguna opción`);
     }
   });
+
   return errors;
 };
+
+const expectedFields = ['pregunta', 'respuesta_correcta', 'opcion_a', 'opcion_b', 'opcion_c', 'opcion_d'];
 
 // Ruta para cargar archivo Excel
 router.post('/evaluaciones/upload', upload.single('file'), async (req, res) => {
@@ -38,10 +57,22 @@ router.post('/evaluaciones/upload', upload.single('file'), async (req, res) => {
     const worksheet = workbook.Sheets[sheetName];
     const data = xlsx.utils.sheet_to_json(worksheet);
 
+    const expectedFields = ['pregunta', 'respuesta_correcta', 'opcion_a', 'opcion_b', 'opcion_c', 'opcion_d'];
+    const fileFields = Object.keys(data[0]);
+    const missingFields = expectedFields.filter(field => !fileFields.includes(field));
+    if (missingFields.length > 0) {
+      return res.status(400).json({ message: 'El archivo no cumple con el formato esperado', details: [`Campos faltantes: ${missingFields.join(', ')}`] });
+    }
+
     const nuevasEvaluaciones = data.map(item => ({
-      pregunta: item.pregunta,
-      opciones: item.opciones.split(',').map(opcion => opcion.trim()),
-      respuesta_correcta: item.respuesta_correcta
+      pregunta: item.pregunta ? item.pregunta.toString().trim() : '',
+      opciones: [
+        item.opcion_a ? item.opcion_a.toString().trim() : '',
+        item.opcion_b ? item.opcion_b.toString().trim() : '',
+        item.opcion_c ? item.opcion_c.toString().trim() : '',
+        item.opcion_d ? item.opcion_d.toString().trim() : ''
+      ],
+      respuesta_correcta: item.respuesta_correcta ? item.respuesta_correcta.toString().trim() : ''
     }));
 
     const validationErrors = validateEvaluaciones(nuevasEvaluaciones);
@@ -61,9 +92,13 @@ router.post('/evaluaciones/upload', upload.single('file'), async (req, res) => {
     res.status(201).json({ message: 'Evaluaciones cargadas exitosamente', evaluacion: savedEvaluacion });
   } catch (error) {
     console.error('Error al procesar el archivo:', error);
-    res.status(400).json({ message: 'Error al procesar el archivo', details: error.message });
+    res.status(400).json({ message: 'Error al procesar el archivo', details: [error.message] });
   }
 });
+
+
+
+
 
 // Ruta para descargar el archivo Excel del tema
 router.get('/temas/:id/download', async (req, res) => {
@@ -175,11 +210,19 @@ router.put('/evaluaciones/:id', upload.single('file'), async (req, res) => {
     console.error('Error al actualizar la evaluación:', error);
     res.status(500).json({ message: 'Error al actualizar la evaluación', error });
   }
-});// Ruta para descargar la plantilla de cuestionario
+});
+// Ruta para descargar la plantilla de cuestionario
 router.get('/evaluaciones/plantilla', (req, res) => {
   try {
     const data = [
-      { pregunta: 'Pregunta de ejemplo', opciones: 'Opción 1, Opción 2, Opción 3, Opción 4', respuesta_correcta: 'Opción 1' }
+      { 
+        pregunta: 'Ejemplo de pregunta', 
+        respuesta_correcta: 'Opción Correcta', 
+        opcion_a: 'Opción A', 
+        opcion_b: 'Opción B', 
+        opcion_c: 'Opción C', 
+        opcion_d: 'Opción D' 
+      }
     ];
 
     const workbook = xlsx.utils.book_new();
