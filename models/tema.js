@@ -18,8 +18,7 @@ const temaSchema = new mongoose.Schema({
     ref: 'Evaluacion',
     default: null
   },
-  habilitado: { type: Boolean, default: false } // Nuevo campo
-
+  habilitado: { type: Boolean, default: false } 
 });
 
 const Tema = mongoose.model('Tema', temaSchema);
