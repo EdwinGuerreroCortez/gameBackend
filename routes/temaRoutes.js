@@ -391,5 +391,22 @@ router.post('/subirTema', upload.single('video'), async (req, res) => {
     res.status(500).json({ error: 'Error creando el tema. Inténtalo de nuevo.' });
   }
 });
+// Endpoint para habilitar o deshabilitar un tema
+router.put('/temas/:id/habilitar', async (req, res) => {
+  try {
+    const tema = await Tema.findById(req.params.id);
+    if (!tema) {
+      return res.status(404).json({ message: 'Tema no encontrado' });
+    }
+
+    tema.habilitado = !tema.habilitado;
+    await tema.save();
+
+    res.json(tema);
+  } catch (error) {
+    console.error('Error actualizando el estado de habilitación del tema:', error);
+    res.status(500).json({ error: 'Error actualizando el estado de habilitación del tema.' });
+  }
+});
 
 module.exports = router;
