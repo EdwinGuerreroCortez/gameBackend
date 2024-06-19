@@ -283,33 +283,73 @@ router.put('/temas/:id', upload.none(), async (req, res) => {
 
 
 
-// Endpoint para descargar la plantilla de tema en Excel
+// Endpoint for downloading the template
+// Endpoint for downloading the template
 router.get('/download-plantilla', (req, res) => {
-  // Crear un nuevo libro de trabajo y una hoja de trabajo con la estructura de la plantilla
+  // Create a new workbook and worksheet with the exact structure of the provided Excel file
   const workbook = XLSX.utils.book_new();
   const worksheetData = [
     {
-      titulo: 'Ejemplo de Título',
-      descripcion: 'Descripción del tema',
-      responsable: 'Responsable del tema',
-      bibliografia: 'Bibliografía del tema',
-      pasoTitulo1: 'Título del Paso 1',
-      pasoDescripcion1: 'Descripción del Paso 1',
-      pasoTitulo2: 'Título del Paso 2 (Opcional)',
-      pasoDescripcion2: 'Descripción del Paso 2 (Opcional)',
-      // Puedes añadir más pasos según sea necesario
+      titulo: 'Ejemplo de Título 1',
+      descripcion: 'Descripción del tema 1',
+      responsable: 'Responsable del tema 1',
+      pasos: 'Título del Paso 1',
+      Descripcion: 'Descripción del Paso 1',
+      bibliografia: 'Bibliografía del tema 1',
+    },
+    {
+      titulo: '',
+      descripcion: '',
+      responsable: '',
+      pasos: 'Título del Paso 2 (Opcional)',
+      Descripcion: 'Descripción del Paso 2 (Opcional)',
+      bibliografia: '',
+    },
+    {
+      titulo: '',
+      descripcion: '',
+      responsable: '',
+      pasos: 'Título del Paso 3 (Opcional)',
+      Descripcion: 'Descripción del Paso 3 (Opcional)',
+      bibliografia: '',
+    },
+    {
+      titulo: 'Ejemplo de Título 2',
+      descripcion: 'Descripción del tema 2',
+      responsable: 'Responsable del tema 2',
+      pasos: 'Título del Paso 1',
+      Descripcion: 'Descripción del Paso 1',
+      bibliografia: 'Bibliografía del tema 2',
+    },
+    {
+      titulo: '',
+      descripcion: '',
+      responsable: '',
+      pasos: 'Título del Paso 2 (Opcional)',
+      Descripcion: 'Descripción del Paso 2 (Opcional)',
+      bibliografia: '',
+    },
+    {
+      titulo: '',
+      descripcion: '',
+      responsable: '',
+      pasos: 'Título del Paso 3 (Opcional)',
+      Descripcion: 'Descripción del Paso 3 (Opcional)',
+      bibliografia: '',
     }
   ];
 
   const worksheet = XLSX.utils.json_to_sheet(worksheetData);
   XLSX.utils.book_append_sheet(workbook, worksheet, 'Plantilla_Tema');
 
-  // Enviar el archivo Excel al cliente
+  // Send the Excel file to the client
   const buffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'buffer' });
   res.setHeader('Content-Disposition', 'attachment; filename=Plantilla_tema.xlsx');
   res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
   res.send(buffer);
 });
+
+
 
 // Endpoint para subir todos los temas
 router.post('/subir-temas', async (req, res) => {
