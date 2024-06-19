@@ -96,10 +96,6 @@ router.post('/evaluaciones/upload', upload.single('file'), async (req, res) => {
   }
 });
 
-
-
-
-
 // Ruta para descargar el archivo Excel del tema
 router.get('/temas/:id/download', async (req, res) => {
   try {
@@ -190,8 +186,13 @@ router.put('/evaluaciones/:id', upload.single('file'), async (req, res) => {
 
       nuevasEvaluaciones = data.map(item => ({
         pregunta: item.pregunta,
-        opciones: item.opciones.split(',').map(opcion => opcion.trim()),
-        respuesta_correcta: item.respuesta_correcta
+        opciones: [
+          item.opcion_a ? item.opcion_a.toString().trim() : '',
+          item.opcion_b ? item.opcion_b.toString().trim() : '',
+          item.opcion_c ? item.opcion_c.toString().trim() : '',
+          item.opcion_d ? item.opcion_d.toString().trim() : ''
+        ],
+        respuesta_correcta: item.respuesta_correcta ? item.respuesta_correcta.toString().trim() : ''
       }));
     }
 
@@ -211,6 +212,7 @@ router.put('/evaluaciones/:id', upload.single('file'), async (req, res) => {
     res.status(500).json({ message: 'Error al actualizar la evaluación', error });
   }
 });
+
 // Ruta para descargar la plantilla de cuestionario
 router.get('/evaluaciones/plantilla', (req, res) => {
   try {
