@@ -4,10 +4,10 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
-// Configurar multer para almacenar las imágenes en la carpeta 'creavideojuego/src/imagenes'
+// Configure multer to store images in the 'creavideojuego/public/imagenes' folder
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    const uploadPath = path.join(__dirname, '..', '..', 'creavideojuego', 'src', 'imagenes');
+    const uploadPath = path.join(__dirname, '..', '..', 'creavideojuego', 'public', 'imagenes');
     if (!fs.existsSync(uploadPath)) {
       fs.mkdirSync(uploadPath, { recursive: true });
     }
@@ -20,7 +20,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
-// Ruta para subir imágenes
+// Route to upload images
 router.post('/upload', upload.array('imagenes', 10), (req, res) => {
   try {
     const fileNames = req.files.map(file => file.filename);

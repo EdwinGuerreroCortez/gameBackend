@@ -57,7 +57,7 @@ router.post('/evaluaciones/upload', upload.single('file'), async (req, res) => {
     const worksheet = workbook.Sheets[sheetName];
     const data = xlsx.utils.sheet_to_json(worksheet);
 
-    const expectedFields = ['pregunta', 'respuesta_correcta', 'opcion_a', 'opcion_b', 'opcion_c', 'opcion_d'];
+    const expectedFields = ['pregunta', 'respuesta_correcta', 'opcion_a', 'opcion_b', 'opcion_c', 'opcion_d', 'imagen'];
     const fileFields = Object.keys(data[0]);
     const missingFields = expectedFields.filter(field => !fileFields.includes(field));
     if (missingFields.length > 0) {
@@ -72,7 +72,8 @@ router.post('/evaluaciones/upload', upload.single('file'), async (req, res) => {
         item.opcion_c ? item.opcion_c.toString().trim() : '',
         item.opcion_d ? item.opcion_d.toString().trim() : ''
       ],
-      respuesta_correcta: item.respuesta_correcta ? item.respuesta_correcta.toString().trim() : ''
+      respuesta_correcta: item.respuesta_correcta ? item.respuesta_correcta.toString().trim() : '',
+      imagen: item.imagen ? item.imagen.toString().trim() : null
     }));
 
     const validationErrors = validateEvaluaciones(nuevasEvaluaciones);
@@ -171,6 +172,7 @@ router.delete('/evaluaciones/:id', async (req, res) => {
 });
 
 // Ruta para editar una evaluación
+
 router.put('/evaluaciones/:id', upload.single('file'), async (req, res) => {
   try {
     const evaluacionId = req.params.id;
@@ -192,7 +194,8 @@ router.put('/evaluaciones/:id', upload.single('file'), async (req, res) => {
           item.opcion_c ? item.opcion_c.toString().trim() : '',
           item.opcion_d ? item.opcion_d.toString().trim() : ''
         ],
-        respuesta_correcta: item.respuesta_correcta ? item.respuesta_correcta.toString().trim() : ''
+        respuesta_correcta: item.respuesta_correcta ? item.respuesta_correcta.toString().trim() : '',
+        imagen: item.imagen ? item.imagen.toString().trim() : null
       }));
     }
 
@@ -258,5 +261,35 @@ router.get('/evaluaciones/:temaId', async (req, res) => {
     res.status(500).json({ message: 'Error al obtener la evaluación', error });
   }
 });
+router.get('/evaluaciones/:id/download', async (req, res) => {
+  try {
+    const evaluacion = await Evaluacion.findById(req.params.id).populate('tema_id');
+    if (!evaluacion) {
+      return res.status(404).json({ message: 'Evaluación no encontrada' });
+    }
+
+    const workbook = xlsx.utils.book_new();
+    const data = evaluacion.evaluacion.map((pregunta, index) => ({
+      pregunta: pregunta.pregunta,
+      respuesta_correcta: pregunta.respuesta_correcta,
+      opcion_a: pregunta.opciones[0],
+      opcion_b: pregunta.opciones[1],
+      opcion_c: pregunta.opciones[2],
+      opcion_d: pregunta.opciones[3],
+      imagen: pregunta.imagen || ''
+    }));
+    const worksheet = xlsx.utils.json_to_sheet(data);
+    xlsx.utils.book_append_sheet(workbook, worksheet, 'Evaluacion');
+
+    const buffer = xlsx.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+    res.setHeader('Content-Disposition', `attachment; filename=${evaluacion.tema_id.titulo}_cuestionario.xlsx`);
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.send(buffer);
+  } catch (error) {
+    console.error('Error al descargar el archivo:', error);
+    res.status(500).json({ message: 'Error al descargar el archivo', error });
+  }
+});
+
 
 module.exports = router;

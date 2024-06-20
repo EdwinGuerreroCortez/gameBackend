@@ -1,4 +1,4 @@
-  //models/evaluacion.js
+// models/evaluacion.js
 
 const mongoose = require('mongoose');
 
@@ -21,6 +21,10 @@ const evaluacionSchema = new mongoose.Schema({
       respuesta_correcta: {
         type: String,
         required: true
+      },
+      imagen: {
+        type: String,
+        default: null
       }
     }
   ]
