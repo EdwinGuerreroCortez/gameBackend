@@ -32,6 +32,33 @@ router.post('/usuarios', async (req, res) => {
         res.status(400).json({ message: error.message });
     }
 });
+// Endpoint para verificar si existe un usuario
+router.post('/verificar', async (req, res) => {
+    const { telefono, correo, matricula } = req.body;
+
+    try {
+
+        const usuarioExistente = await Usuario.findOne({
+            $or: [
+                { 'datos_personales.telefono': telefono },
+                { 'datos_personales.correo': correo },
+                { 'datos_personales.matricula': matricula }
+            ]
+        });
+
+        if (usuarioExistente) {
+            return res.status(200).json({ message: 'Usuario encontrado.' });
+        }
+
+        console.log('Usuario no encontrado.');
+        return res.status(200).json({ message: 'Usuario no encontrado.' });
+    } catch (error) {
+        console.error('Error del servidor:', error);
+        return res.status(500).json({ message: 'Error del servidor.' });
+    }
+});
+
+
 
 // Endpoint para iniciar sesión
 router.post('/login', async (req, res) => {

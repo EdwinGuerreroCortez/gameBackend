@@ -60,6 +60,11 @@ const usuarioSchema = new mongoose.Schema({
       required: true,
       default: 'N/A' // valor predeterminado para administradores
     },
+    matricula: {
+      type: String,
+      required: true, // Aquí asumimos que es un campo obligatorio
+      default: 'N/A' // valor predeterminado para administradores
+    },
   },
   experiencia_en_lenguaje_de_programacion: {
     type: [String],
