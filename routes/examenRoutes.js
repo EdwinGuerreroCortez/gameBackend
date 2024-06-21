@@ -30,18 +30,18 @@ router.post('/examenes', async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
-// Ruta para obtener todos los exámenes con el título del tema
+
+// Ruta para obtener todos los exámenes con el título del tema y la matrícula del usuario
 router.get('/examenes', async (req, res) => {
   try {
     const examenes = await Examen.find()
-      .populate('usuarioId', 'matricula') // Popula el campo usuarioId para obtener la matrícula
-      .populate('temaId', 'titulo'); // Popula el campo temaId para obtener el título del tema
+      .populate('usuarioId', 'matricula datos_personales')
+      .populate('temaId', 'titulo');
 
     res.status(200).json(examenes);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });
-
 
 module.exports = router;
