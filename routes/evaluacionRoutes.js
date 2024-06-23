@@ -307,5 +307,33 @@ router.put('/evaluaciones/:id/habilitar', async (req, res) => {
     res.status(500).json({ message: 'Error al cambiar el estado de habilitado', error });
   }
 });
+router.get('/tema-evaluacion/:temaId', async (req, res) => {
+  try {
+    const { temaId } = req.params;
+    
+    // Buscar el tema por ID
+    const tema = await Tema.findById(temaId);
+    if (!tema) {
+      return res.status(404).json({ message: 'Tema no encontrado' });
+    }
+
+    // Buscar la evaluación relacionada usando el campo evaluacion_id
+    const evaluacion = await Evaluacion.findById(tema.evaluacion_id);
+    if (!evaluacion) {
+      return res.status(404).json({ message: 'Evaluación no encontrada' });
+    }
+
+    // Combinar la información del tema y la evaluación
+    const temaEvaluacion = {
+      ...tema._doc,
+      evaluacion: evaluacion.evaluacion,
+      evaluacion_habilitada: evaluacion.habilitado
+    };
+
+    res.json(temaEvaluacion);
+  } catch (error) {
+    res.status(500).json({ message: 'Error al obtener la información del tema y la evaluación', error });
+  }
+});
 
 module.exports = router;

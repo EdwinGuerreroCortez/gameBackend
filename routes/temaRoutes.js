@@ -281,9 +281,6 @@ router.put('/temas/:id', upload.none(), async (req, res) => {
   }
 });
 
-
-
-// Endpoint for downloading the template
 // Endpoint for downloading the template
 router.get('/download-plantilla', (req, res) => {
   // Create a new workbook and worksheet with the exact structure of the provided Excel file
@@ -348,9 +345,6 @@ router.get('/download-plantilla', (req, res) => {
   res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
   res.send(buffer);
 });
-
-
-
 // Endpoint para subir todos los temas
 router.post('/subir-temas', async (req, res) => {
   const { temas } = req.body;
