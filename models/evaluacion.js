@@ -1,5 +1,3 @@
-// models/evaluacion.js
-
 const mongoose = require('mongoose');
 
 const evaluacionSchema = new mongoose.Schema({
@@ -27,7 +25,11 @@ const evaluacionSchema = new mongoose.Schema({
         default: null
       }
     }
-  ]
+  ],
+  habilitado: {
+    type: Boolean,
+    default: false
+  }
 });
 
 const Evaluacion = mongoose.model('Evaluacion', evaluacionSchema);

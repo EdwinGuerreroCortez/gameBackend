@@ -291,5 +291,21 @@ router.get('/evaluaciones/:id/download', async (req, res) => {
   }
 });
 
+router.put('/evaluaciones/:id/habilitar', async (req, res) => {
+  try {
+    const evaluacion = await Evaluacion.findById(req.params.id);
+    if (!evaluacion) {
+      return res.status(404).json({ message: 'Evaluación no encontrada' });
+    }
+    // Cambia el estado del campo habilitado
+    evaluacion.habilitado = !evaluacion.habilitado;
+
+    const savedEvaluacion = await evaluacion.save();
+    res.status(200).json({ message: 'Estado de habilitado cambiado exitosamente', evaluacion: savedEvaluacion });
+  } catch (error) {
+    console.error('Error al cambiar el estado de habilitado:', error);
+    res.status(500).json({ message: 'Error al cambiar el estado de habilitado', error });
+  }
+});
 
 module.exports = router;
