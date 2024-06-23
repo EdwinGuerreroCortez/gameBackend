@@ -1,4 +1,3 @@
-//usuarioRoutes
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcrypt');
@@ -32,33 +31,33 @@ router.post('/usuarios', async (req, res) => {
         res.status(400).json({ message: error.message });
     }
 });
+
 // Endpoint para verificar si existe un usuario
 router.post('/verificar', async (req, res) => {
     const { telefono, correo, matricula } = req.body;
 
     try {
-
-        const usuarioExistente = await Usuario.findOne({
-            $or: [
-                { 'datos_personales.telefono': telefono },
-                { 'datos_personales.correo': correo },
-                { 'datos_personales.matricula': matricula }
-            ]
-        });
-
-        if (usuarioExistente) {
-            return res.status(200).json({ message: 'Usuario encontrado.' });
+        const telefonoExistente = await Usuario.findOne({ 'datos_personales.telefono': telefono });
+        if (telefonoExistente) {
+            return res.status(200).json({ message: 'Teléfono ya registrado.' });
         }
 
-        console.log('Usuario no encontrado.');
+        const correoExistente = await Usuario.findOne({ 'datos_personales.correo': correo });
+        if (correoExistente) {
+            return res.status(200).json({ message: 'Correo electrónico ya registrado.' });
+        }
+
+        const matriculaExistente = await Usuario.findOne({ 'datos_personales.matricula': matricula });
+        if (matriculaExistente) {
+            return res.status(200).json({ message: 'Matrícula ya registrada.' });
+        }
+
         return res.status(200).json({ message: 'Usuario no encontrado.' });
     } catch (error) {
         console.error('Error del servidor:', error);
         return res.status(500).json({ message: 'Error del servidor.' });
     }
 });
-
-
 
 // Endpoint para iniciar sesión
 router.post('/login', async (req, res) => {
@@ -81,6 +80,7 @@ router.post('/login', async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 });
+
 // Endpoint para obtener un usuario por ID
 router.get('/usuarios/:id', async (req, res) => {
     try {
@@ -141,6 +141,7 @@ router.put('/usuarios/:id/imagen', async (req, res) => {
         res.status(400).json({ message: error.message });
     }
 });
+
 // Nuevo endpoint para crear un nuevo administrador
 router.post('/usuarios/admin', async (req, res) => {
     try {
@@ -169,6 +170,7 @@ router.post('/usuarios/admin', async (req, res) => {
         res.status(400).json({ message: error.message });
     }
 });
+
 // Endpoint para eliminar un usuario por ID
 router.delete('/usuarios/:id', async (req, res) => {
     try {
@@ -183,6 +185,7 @@ router.delete('/usuarios/:id', async (req, res) => {
         res.status(500).json({ message: 'Error al eliminar usuario', error: error.message });
     }
 });
+
 // Endpoint para guardar resultados de evaluaciones
 router.post('/usuarios/:id/evaluaciones', async (req, res) => {
     try {
@@ -205,6 +208,6 @@ router.post('/usuarios/:id/evaluaciones', async (req, res) => {
     } catch (error) {
       res.status(500).json({ message: error.message });
     }
-  });
-  
+});
+
 module.exports = router;

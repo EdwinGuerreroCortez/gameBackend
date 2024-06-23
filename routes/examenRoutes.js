@@ -68,7 +68,22 @@ router.get('/examenes/:usuarioId/:temaId', async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
+// Nueva ruta para cambiar el estado de examenPermitido
+router.put('/examenes/:id/toggle', async (req, res) => {
+  try {
+    const examen = await Examen.findById(req.params.id);
+    if (!examen) {
+      return res.status(404).json({ message: 'Examen no encontrado' });
+    }
 
+    examen.examenPermitido = !examen.examenPermitido;
+    await examen.save();
+
+    res.status(200).json({ message: 'Estado de examen permitido actualizado', examen });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
 
 module.exports = router;
 
