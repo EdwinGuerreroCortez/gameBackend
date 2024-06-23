@@ -6,30 +6,41 @@ const Usuario = require('../models/usuario');
 // Ruta para guardar resultados de exámenes
 router.post('/examenes', async (req, res) => {
   try {
-    const { usuarioId, temaId, porcentaje, preguntasRespondidas } = req.body;
+    const { usuarioId, temaId, porcentaje, preguntasRespondidas, fecha } = req.body;
 
-    const examenExistente = await Examen.findOne({ usuarioId, temaId });
+    let examenExistente = await Examen.findOne({ usuarioId, temaId });
 
     if (examenExistente) {
-      return res.status(400).json({ message: 'El examen ya ha sido realizado.' });
+      examenExistente.intentos += 1;
+      examenExistente.preguntasRespondidas.push({
+        intento: examenExistente.intentos,
+        fecha,
+        respuestas: preguntasRespondidas,
+        porcentaje
+      });
+      examenExistente.examenPermitido = false; // Establecer examenPermitido a false
+    } else {
+      examenExistente = new Examen({
+        usuarioId,
+        temaId,
+        intentos: 1,
+        examenPermitido: false, // Establecer examenPermitido a false
+        preguntasRespondidas: [{
+          intento: 1,
+          fecha,
+          respuestas: preguntasRespondidas,
+          porcentaje
+        }]
+      });
     }
 
-    const nuevoExamen = new Examen({
-      usuarioId,
-      temaId,
-      preguntasRespondidas,
-      porcentaje,
-      intentos: 1,
-      fecha: new Date() // Guardar la fecha actual
-    });
-
-    await nuevoExamen.save();
-
-    res.status(200).json({ message: 'Examen guardado exitosamente', examen: nuevoExamen });
+    await examenExistente.save();
+    res.status(200).json({ message: 'Examen guardado exitosamente', examen: examenExistente });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });
+
 
 // Ruta para obtener todos los exámenes con el título del tema y la matrícula del usuario
 router.get('/examenes', async (req, res) => {
@@ -43,5 +54,21 @@ router.get('/examenes', async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
+router.get('/examenes/:usuarioId/:temaId', async (req, res) => {
+  try {
+    const { usuarioId, temaId } = req.params;
+    const examen = await Examen.findOne({ usuarioId, temaId });
+
+    if (examen) {
+      res.status(200).json(examen);
+    } else {
+      res.status(404).json({ message: 'Examen no encontrado' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 
 module.exports = router;
+
