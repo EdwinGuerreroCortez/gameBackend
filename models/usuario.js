@@ -22,6 +22,10 @@ const usuarioSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+  autorizacion: {
+    type: Boolean,
+    default: false,
+  },
   datos_personales: {
     nombre: {
       type: String,

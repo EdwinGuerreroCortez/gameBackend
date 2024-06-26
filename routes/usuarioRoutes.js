@@ -69,6 +69,10 @@ router.post('/login', async (req, res) => {
             return res.status(400).json({ message: 'Correo o contraseña incorrectos' });
         }
 
+        if (!usuario.autorizacion) {
+            return res.status(403).json({ message: 'Acceso no autorizado' });
+        }
+
         const passwordMatch = await bcrypt.compare(password, usuario.password);
         if (!passwordMatch) {
             return res.status(400).json({ message: 'Correo o contraseña incorrectos' });
@@ -80,6 +84,7 @@ router.post('/login', async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 });
+
 
 // Endpoint para obtener un usuario por ID
 router.get('/usuarios/:id', async (req, res) => {
@@ -207,6 +212,23 @@ router.post('/usuarios/:id/evaluaciones', async (req, res) => {
       res.status(200).json({ message: 'Evaluación guardada exitosamente' });
     } catch (error) {
       res.status(500).json({ message: error.message });
+    }
+});
+// Endpoint para actualizar el estado de autorización de un usuario
+router.put('/usuarios/:id/autorizar', async (req, res) => {
+    try {
+        const { autorizacion } = req.body;
+        const usuario = await Usuario.findById(req.params.id);
+        if (!usuario) {
+            return res.status(404).json({ message: 'Usuario no encontrado' });
+        }
+
+        usuario.autorizacion = autorizacion;
+        await usuario.save();
+
+        res.json({ message: 'Estado de autorización actualizado con éxito', autorizacion: usuario.autorizacion });
+    } catch (error) {
+        res.status(400).json({ message: error.message });
     }
 });
 
