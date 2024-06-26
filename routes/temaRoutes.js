@@ -35,100 +35,7 @@ const validateExcelData = (data, requiredColumns) => {
 
   return errors;
 };
-// Endpoint para subir un archivo Excel y un video, y procesarlos
-router.post('/upload-excel-video', upload.fields([{ name: 'file', maxCount: 1 }, { name: 'video', maxCount: 1 }]), async (req, res) => {
-  try {
-    if (!req.files || !req.files['file'] || !req.files['video']) {
-      return res.status(400).json({ error: 'Archivo Excel y/o video no proporcionados.' });
-    }
 
-    const file = req.files['file'][0];
-    const videoFile = req.files['video'][0];
-
-    const workbook = XLSX.read(file.buffer, { type: 'buffer' });
-    const firstSheetName = workbook.SheetNames[0];
-    const worksheet = workbook.Sheets[firstSheetName];
-    const json = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
-
-    if (json.length === 0) {
-      return res.status(400).json({ error: 'El archivo Excel está vacío o tiene un formato incorrecto.' });
-    }
-
-    let temas = [];
-    let currentTema = null;
-
-    json.forEach((row) => {
-      row = cleanColumnNames(row);
-
-      if (row['titulo']) {
-        if (currentTema) {
-          temas.push(currentTema);
-        }
-        currentTema = {
-          titulo: row['titulo'],
-          descripcion: row['descripcion'],
-          responsable: row['responsable'],
-          bibliografia: row['bibliografia'],
-          pasos: [],
-        };
-      }
-
-      if (currentTema) {
-        currentTema.pasos.push({ Titulo: row['pasoTitulo'], Descripcion: row['pasoDescripcion'] });
-      }
-    });
-
-    if (currentTema) {
-      temas.push(currentTema);
-    }
-
-    const validationErrors = temas.map((tema) =>
-      validateExcelData(tema, ['titulo', 'descripcion', 'responsable', 'bibliografia'])
-    ).flat();
-
-    if (validationErrors.length > 0) {
-      return res.status(400).json({ error: 'Errores de validación en el archivo Excel.', details: validationErrors });
-    }
-
-    const uploadVideo = (tema) => {
-      return new Promise((resolve, reject) => {
-        const cld_upload_stream = cloudinary.uploader.upload_stream(
-          { resource_type: 'video', folder: 'videos' },
-          (error, result) => {
-            if (error) {
-              reject(error);
-            } else {
-              resolve(result.secure_url);
-            }
-          }
-        );
-        streamifier.createReadStream(videoFile.buffer).pipe(cld_upload_stream);
-      });
-    };
-
-    const saveTema = async (tema) => {
-      try {
-        const videoUrl = await uploadVideo(tema);
-        const newTema = new Tema({ ...tema, video: videoUrl, evaluacion_id: null });
-        return await newTema.save();
-      } catch (error) {
-        throw new Error(`Error guardando el tema: ${error.message}`);
-      }
-    };
-
-    Promise.all(temas.map(saveTema))
-      .then((savedTemas) => {
-        res.status(200).json(savedTemas);
-      })
-      .catch((error) => {
-        console.error('Error guardando los temas:', error);
-        res.status(500).json({ error: 'Error guardando los temas: ' + error.message });
-      });
-  } catch (error) {
-    console.error('Error procesando los archivos:', error);
-    res.status(500).json({ error: 'Error procesando los archivos: ' + error });
-  }
-});
 
 // Endpoint para subir un video para un tema
 router.post('/upload-video/:id', upload.single('video'), async (req, res) => {
@@ -281,9 +188,9 @@ router.put('/temas/:id', upload.none(), async (req, res) => {
   }
 });
 
-// Endpoint for downloading the template
+// Endpoint para descargar la plantilla
 router.get('/download-plantilla', (req, res) => {
-  // Create a new workbook and worksheet with the exact structure of the provided Excel file
+  // Crear un nuevo libro de trabajo y una hoja de trabajo con el formato requerido
   const workbook = XLSX.utils.book_new();
   const worksheetData = [
     {
@@ -293,6 +200,8 @@ router.get('/download-plantilla', (req, res) => {
       pasos: 'Título del Paso 1',
       Descripcion: 'Descripción del Paso 1',
       bibliografia: 'Bibliografía del tema 1',
+      subtema: 'Título del Subtema 1',
+      descripcionSubtema: 'Descripción del Subtema 1',
     },
     {
       titulo: '',
@@ -301,6 +210,8 @@ router.get('/download-plantilla', (req, res) => {
       pasos: 'Título del Paso 2 (Opcional)',
       Descripcion: 'Descripción del Paso 2 (Opcional)',
       bibliografia: '',
+      subtema: 'Título del Subtema 2 (Opcional)',
+      descripcionSubtema: 'Descripción del Subtema 2 (Opcional)',
     },
     {
       titulo: '',
@@ -309,6 +220,8 @@ router.get('/download-plantilla', (req, res) => {
       pasos: 'Título del Paso 3 (Opcional)',
       Descripcion: 'Descripción del Paso 3 (Opcional)',
       bibliografia: '',
+      subtema: 'Título del Subtema 3 (Opcional)',
+      descripcionSubtema: 'Descripción del Subtema 3 (Opcional)',
     },
     {
       titulo: 'Ejemplo de Título 2',
@@ -317,6 +230,8 @@ router.get('/download-plantilla', (req, res) => {
       pasos: 'Título del Paso 1',
       Descripcion: 'Descripción del Paso 1',
       bibliografia: 'Bibliografía del tema 2',
+      subtema: 'Título del Subtema 1',
+      descripcionSubtema: 'Descripción del Subtema 1',
     },
     {
       titulo: '',
@@ -325,6 +240,8 @@ router.get('/download-plantilla', (req, res) => {
       pasos: 'Título del Paso 2 (Opcional)',
       Descripcion: 'Descripción del Paso 2 (Opcional)',
       bibliografia: '',
+      subtema: 'Título del Subtema 2 (Opcional)',
+      descripcionSubtema: 'Descripción del Subtema 2 (Opcional)',
     },
     {
       titulo: '',
@@ -333,18 +250,21 @@ router.get('/download-plantilla', (req, res) => {
       pasos: 'Título del Paso 3 (Opcional)',
       Descripcion: 'Descripción del Paso 3 (Opcional)',
       bibliografia: '',
+      subtema: 'Título del Subtema 3 (Opcional)',
+      descripcionSubtema: 'Descripción del Subtema 3 (Opcional)',
     }
   ];
 
   const worksheet = XLSX.utils.json_to_sheet(worksheetData);
   XLSX.utils.book_append_sheet(workbook, worksheet, 'Plantilla_Tema');
 
-  // Send the Excel file to the client
+  // Enviar el archivo Excel al cliente
   const buffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'buffer' });
   res.setHeader('Content-Disposition', 'attachment; filename=Plantilla_tema.xlsx');
   res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
   res.send(buffer);
 });
+
 // Endpoint para subir todos los temas
 router.post('/subir-temas', async (req, res) => {
   const { temas } = req.body;
@@ -357,12 +277,15 @@ router.post('/subir-temas', async (req, res) => {
         responsable: tema.responsable,
         bibliografia: tema.bibliografia,
         pasos: tema.pasos,
+        subtemas: tema.subtemas, // Asegurarse de incluir los subtemas aquí
         video: null,
         evaluacion_id: null,
       });
+      console.log('Guardando tema:', newTema); // Log del tema antes de guardarlo
       return await newTema.save();
     }));
 
+    console.log('Temas guardados:', savedTemas); // Log de temas guardados
     res.status(200).json(savedTemas);
   } catch (error) {
     console.error('Error guardando los temas:', error);

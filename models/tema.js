@@ -1,27 +1,27 @@
 const mongoose = require('mongoose');
 
-const pasoSchema = new mongoose.Schema({
-  Titulo: String,
-  Descripcion: String,
+const PasoSchema = new mongoose.Schema({
+  Titulo: { type: String, required: true },
+  Descripcion: { type: String, required: true },
 });
 
-const temaSchema = new mongoose.Schema({
-  titulo: String,
-  descripcion: String,
-  fecha_creacion: { type: Date, default: Date.now },
-  responsable: String,
-  bibliografia: String,
-  pasos: [pasoSchema],
+const SubtemaSchema = new mongoose.Schema({
+  titulo: { type: String, required: true },
+  descripcion: { type: String, required: true },
   video: { type: String, default: null },
-  evaluacion_id: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Evaluacion',
-    default: null
-  },
-  habilitado: { type: Boolean, default: false } 
 });
 
-const Tema = mongoose.model('Tema', temaSchema);
+const TemaSchema = new mongoose.Schema({
+  titulo: { type: String, required: true },
+  descripcion: { type: String, required: true },
+  responsable: { type: String, required: true },
+  bibliografia: { type: String, required: true },
+  pasos: [PasoSchema],
+  subtemas: [SubtemaSchema],
+  video: { type: String, default: null },
+  evaluacion_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Evaluacion' },
+  habilitado: { type: Boolean, default: false },
+  fecha_creacion: { type: Date, default: Date.now },
+});
 
-module.exports = Tema;
-
+module.exports = mongoose.model('Tema', TemaSchema);
