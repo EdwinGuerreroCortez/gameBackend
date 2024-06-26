@@ -38,17 +38,14 @@ const usuarioSchema = new mongoose.Schema({
     edad: {
       type: Number,
       required: true,
-      default: 0 // valor predeterminado para administradores
     },
     genero: {
       type: String,
       required: true,
-      default: 'N/A' // valor predeterminado para administradores
     },
     telefono: {
       type: String,
       required: true,
-      default: 'N/A' // valor predeterminado para administradores
     },
     correo: {
       type: String,
@@ -99,7 +96,11 @@ const usuarioSchema = new mongoose.Schema({
         },
       ],
     },
-  ]
+  ],
+  autorizacion: {
+    type: Boolean,
+    default: true,
+  }
 });
 
 const Usuario = mongoose.model('Usuario', usuarioSchema);

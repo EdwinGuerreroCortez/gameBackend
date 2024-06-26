@@ -16,21 +16,24 @@ router.get('/usuarios', async (req, res) => {
 // Endpoint para crear un nuevo usuario
 router.post('/usuarios', async (req, res) => {
     try {
-        // Cifrar el password
-        const hashedPassword = await bcrypt.hash(req.body.password, 10);
-
-        // Crear el nuevo usuario con el password cifrado
-        const nuevoUsuario = new Usuario({
-            ...req.body,
-            password: hashedPassword
-        });
-
-        await nuevoUsuario.save();
-        res.status(201).json(nuevoUsuario);
+      console.log('Datos del nuevo usuario:', req.body); // Línea de depuración
+  
+      // Cifrar el password
+      const hashedPassword = await bcrypt.hash(req.body.password, 10);
+  
+      // Crear el nuevo usuario con el password cifrado
+      const nuevoUsuario = new Usuario({
+        ...req.body,
+        password: hashedPassword
+      });
+  
+      await nuevoUsuario.save();
+      res.status(201).json(nuevoUsuario);
     } catch (error) {
-        res.status(400).json({ message: error.message });
+      res.status(400).json({ message: error.message });
     }
-});
+  });
+  
 
 // Endpoint para verificar si existe un usuario
 router.post('/verificar', async (req, res) => {
@@ -142,35 +145,38 @@ router.put('/usuarios/:id/imagen', async (req, res) => {
     }
 });
 
-// Nuevo endpoint para crear un nuevo administrador
+//endpoint para añadir admin o docente 
 router.post('/usuarios/admin', async (req, res) => {
     try {
-        const hashedPassword = await bcrypt.hash(req.body.contrasena, 10);
-        const nuevoAdministrador = new Usuario({
-            username: req.body.nomusuario,
-            password: hashedPassword,
-            tipo: 'administrador', // Asignar el tipo 'administrador'
-            datos_personales: {
-                nombre: req.body.nombre,
-                apellido_paterno: req.body.apellidoPaterno,
-                apellido_materno: req.body.apellidoMaterno,
-                correo: req.body.correo,
-                edad: 0, // Valor predeterminado
-                genero: 'N/A', // Valor predeterminado
-                telefono: 'N/A', // Valor predeterminado
-                grado_de_estudios: 'N/A' // Valor predeterminado
-            },
-            experiencia_en_lenguaje_de_programacion: [], // Valor predeterminado
-            evaluaciones_realizadas: [] // Valor predeterminado
-        });
-
-        await nuevoAdministrador.save();
-        res.status(201).json(nuevoAdministrador);
+      const hashedPassword = await bcrypt.hash(req.body.contrasena, 10);
+  
+      const nuevoUsuario = new Usuario({
+        username: req.body.nomusuario,
+        password: hashedPassword,
+        tipo: req.body.tipo,
+        datos_personales: {
+          nombre: req.body.nombre,
+          apellido_paterno: req.body.apellidoPaterno,
+          apellido_materno: req.body.apellidoMaterno,
+          correo: req.body.correo,
+          edad:  '0',
+          genero: req.body.genero,
+          telefono: req.body.telefono,
+          grado_de_estudios: 'N/A', // Valor predeterminado
+        },
+        experiencia_en_lenguaje_de_programacion: [], // Valor predeterminado
+        evaluaciones_realizadas: [], // Valor predeterminado
+        autorizacion: true, // Asegurarte de establecer este campo
+      });
+  
+      await nuevoUsuario.save();
+      res.status(201).json(nuevoUsuario);
     } catch (error) {
-        res.status(400).json({ message: error.message });
+      console.error('Error al guardar el usuario:', error); // Depuración: Imprimir error
+      res.status(400).json({ message: error.message });
     }
-});
-
+  });
+  
 // Endpoint para eliminar un usuario por ID
 router.delete('/usuarios/:id', async (req, res) => {
     try {
