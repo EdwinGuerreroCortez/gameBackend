@@ -99,7 +99,7 @@ const usuarioSchema = new mongoose.Schema({
   ],
   autorizacion: {
     type: Boolean,
-    default: true,
+    default: false,
   }
 });
 
