@@ -65,24 +65,29 @@ router.post('/verificar', async (req, res) => {
 // Endpoint para iniciar sesión
 router.post('/login', async (req, res) => {
     try {
-        const { email, password } = req.body;
-        const usuario = await Usuario.findOne({ "datos_personales.correo": email });
-
-        if (!usuario) {
-            return res.status(400).json({ message: 'Correo o contraseña incorrectos' });
-        }
-
-        const passwordMatch = await bcrypt.compare(password, usuario.password);
-        if (!passwordMatch) {
-            return res.status(400).json({ message: 'Correo o contraseña incorrectos' });
-        }
-
-        // Devolver el ID del usuario y el tipo
-        res.json({ message: 'Inicio de sesión exitoso', userId: usuario._id, tipo: usuario.tipo });
+      const { email, password } = req.body;
+      const usuario = await Usuario.findOne({ "datos_personales.correo": email });
+  
+      if (!usuario) {
+        return res.status(400).json({ message: 'Correo o contraseña incorrectos' });
+      }
+  
+      const passwordMatch = await bcrypt.compare(password, usuario.password);
+      if (!passwordMatch) {
+        return res.status(400).json({ message: 'Correo o contraseña incorrectos' });
+      }
+  
+      if (!usuario.autorizacion) {
+        return res.status(401).json({ message: 'No tienes autorización para acceder' });
+      }
+  
+      // Devolver el ID del usuario y el tipo
+      res.json({ message: 'Inicio de sesión exitoso', userId: usuario._id, tipo: usuario.tipo });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+      res.status(500).json({ message: error.message });
     }
-});
+  });
+  
 
 // Endpoint para obtener un usuario por ID
 router.get('/usuarios/:id', async (req, res) => {
