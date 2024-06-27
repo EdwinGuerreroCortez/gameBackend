@@ -271,16 +271,25 @@ router.post('/subir-temas', async (req, res) => {
 
   try {
     const savedTemas = await Promise.all(temas.map(async (tema) => {
+      // Crear el nuevo tema con todos los campos
       const newTema = new Tema({
         titulo: tema.titulo,
         descripcion: tema.descripcion,
         responsable: tema.responsable,
         bibliografia: tema.bibliografia,
-        pasos: tema.pasos,
-        subtemas: tema.subtemas, // Asegurarse de incluir los subtemas aquí
+        pasos: tema.pasos.map(paso => ({
+          Titulo: paso.Titulo,
+          Descripcion: paso.Descripcion
+        })), // Procesar los pasos
+        subtemas: tema.subtemas.map(subtema => ({
+          titulo: subtema.Titulo,
+          descripcion: subtema.Descripcion,
+          video: subtema.Link
+        })), // Procesar los subtemas para asegurarse de que se guarden correctamente
         video: null,
         evaluacion_id: null,
       });
+
       console.log('Guardando tema:', newTema); // Log del tema antes de guardarlo
       return await newTema.save();
     }));
@@ -292,10 +301,11 @@ router.post('/subir-temas', async (req, res) => {
     res.status(500).json({ error: 'Error guardando los temas: ' + error.message });
   }
 });
-// Endpoint para subir un tema con video y pasos
+
+// Endpoint para subir un tema con video, pasos y subtemas
 router.post('/subirTema', upload.single('video'), async (req, res) => {
   try {
-    const { titulo, descripcion, responsable, bibliografia, pasos } = req.body;
+    const { titulo, descripcion, responsable, bibliografia, pasos, subtemas } = req.body;
     const videoFile = req.file;
 
     if (!titulo || !descripcion || !responsable || !bibliografia) {
@@ -303,6 +313,8 @@ router.post('/subirTema', upload.single('video'), async (req, res) => {
     }
 
     const parsedPasos = JSON.parse(pasos);
+    const parsedSubtemas = subtemas ? JSON.parse(subtemas) : [];
+
     if (parsedPasos.length === 0) {
       return res.status(400).json({ error: 'Debe haber al menos un paso definido.' });
     }
@@ -310,6 +322,12 @@ router.post('/subirTema', upload.single('video'), async (req, res) => {
     for (const paso of parsedPasos) {
       if (!paso.Titulo || !paso.Descripcion) {
         return res.status(400).json({ error: 'Cada paso debe tener un título y una descripción.' });
+      }
+    }
+
+    for (const subtema of parsedSubtemas) {
+      if (!subtema.Titulo || !subtema.Descripcion || !subtema.Link) {
+        return res.status(400).json({ error: 'Cada subtema debe tener un título, una descripción y un link.' });
       }
     }
 
@@ -329,13 +347,22 @@ router.post('/subirTema', upload.single('video'), async (req, res) => {
       });
     };
 
-    const videoUrl = await uploadVideo();
+    let videoUrl = null;
+    if (videoFile) {
+      videoUrl = await uploadVideo();
+    }
+
     const newTema = new Tema({
       titulo,
       descripcion,
       responsable,
       bibliografia,
       pasos: parsedPasos,
+      subtemas: parsedSubtemas.map(subtema => ({
+        titulo: subtema.Titulo,
+        descripcion: subtema.Descripcion,
+        video: subtema.Link
+      })), // Procesar los subtemas para asegurarse de que se guarden correctamente
       video: videoUrl,
       evaluacion_id: null,
       fecha_creacion: new Date(),
@@ -348,6 +375,7 @@ router.post('/subirTema', upload.single('video'), async (req, res) => {
     res.status(500).json({ error: 'Error creando el tema. Inténtalo de nuevo.' });
   }
 });
+
 // Endpoint para habilitar o deshabilitar un tema
 router.put('/temas/:id/habilitar', async (req, res) => {
   try {
