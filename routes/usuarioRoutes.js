@@ -2,6 +2,12 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcrypt');
 const Usuario = require('../models/usuario');
+const Curso = require('../models/cursos'); // Reemplaza con la ruta correcta a tu modelo
+const Tema = require('../models/tema'); // Asegúrate de que la ruta sea correcta
+const Examen = require('../models/examen');
+
+
+
 
 // Endpoint para obtener todos los usuarios
 router.get('/usuarios', async (req, res) => {
@@ -237,4 +243,161 @@ router.put('/usuarios/:id/autorizar', async (req, res) => {
     }
   });
   
+
+
+
+
+
+
+
+
+  //Docentes endpoitn
+  // Endpoint to get courses related to the logged-in user
+router.get('/usuario/:userId/cursos', async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const usuario = await Usuario.findById(userId).populate('cursos');
+
+    if (!usuario) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+
+    res.json(usuario.cursos);
+  } catch (error) {
+    console.error('Error al obtener los cursos del usuario:', error);
+    res.status(500).json({ message: 'Error al obtener los cursos del usuario.' });
+  }
+});
+// Endpoint para obtener los temas de los cursos relacionados a un usuario específico
+router.get('/usuario/:usuarioId/temas', async (req, res) => {
+  try {
+    const usuarioId = req.params.usuarioId;
+
+    console.log(`Buscando usuario con ID: ${usuarioId}`);
+
+    // Encontrar al usuario por ID y popular los cursos
+    const usuario = await Usuario.findById(usuarioId).populate({
+      path: 'cursos',
+      populate: {
+        path: 'temas',
+        model: 'Tema',
+      }
+    });
+
+    if (!usuario) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+
+    console.log(`Usuario encontrado: ${usuario}`);
+    console.log(`Cursos del usuario: ${JSON.stringify(usuario.cursos, null, 2)}`);
+
+    // Extraer todos los temas de los cursos del usuario
+    const todosLosTemas = usuario.cursos.reduce((acumulador, curso) => {
+      return acumulador.concat(curso.temas);
+    }, []);
+
+    console.log(`Temas encontrados: ${JSON.stringify(todosLosTemas, null, 2)}`);
+
+    res.json(todosLosTemas);
+  } catch (error) {
+    console.error('Error al obtener los temas del usuario:', error);
+    res.status(500).json({ message: 'Error al obtener los temas del usuario.' });
+  }
+});
+
+// Endpoint para obtener los temas y sus evaluaciones relacionadas de un usuario específico
+router.get('/usuario/:usuarioId/temas-evaluaciones', async (req, res) => {
+  try {
+    const usuarioId = req.params.usuarioId;
+
+    console.log(`Buscando usuario con ID: ${usuarioId}`);
+
+    // Encontrar al usuario por ID y popular los cursos y temas
+    const usuario = await Usuario.findById(usuarioId).populate({
+      path: 'cursos',
+      populate: {
+        path: 'temas',
+        model: 'Tema',
+        populate: {
+          path: 'evaluacion_id',
+          model: 'Evaluacion'
+        }
+      }
+    });
+
+    if (!usuario) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+
+    console.log(`Usuario encontrado: ${usuario}`);
+    console.log(`Cursos del usuario: ${JSON.stringify(usuario.cursos, null, 2)}`);
+
+    // Extraer todos los temas y sus evaluaciones de los cursos del usuario
+    const temasConEvaluaciones = usuario.cursos.reduce((acumulador, curso) => {
+      curso.temas.forEach(tema => {
+        if (tema.evaluacion_id) {
+          acumulador.push({
+            tema: tema,
+            evaluacion: tema.evaluacion_id
+          });
+        }
+      });
+      return acumulador;
+    }, []);
+
+    console.log(`Temas y evaluaciones encontrados: ${JSON.stringify(temasConEvaluaciones, null, 2)}`);
+
+    res.json(temasConEvaluaciones);
+  } catch (error) {
+    console.error('Error al obtener los temas y evaluaciones del usuario:', error);
+    res.status(500).json({ message: 'Error al obtener los temas y evaluaciones del usuario.' });
+  }
+});
+router.get('/usuario/:usuarioId/temasbuscar', async (req, res) => {
+  try {
+    const usuarioId = req.params.usuarioId;
+
+    console.log(`Buscando usuario con ID: ${usuarioId}`);
+
+    // Encontrar al usuario por ID y popular los cursos
+    const usuario = await Usuario.findById(usuarioId).populate({
+      path: 'cursos',
+      populate: {
+        path: 'temas',
+        model: 'Tema',
+      }
+    });
+
+    if (!usuario) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+
+    console.log(`Usuario encontrado: ${usuario}`);
+    console.log(`Cursos del usuario: ${JSON.stringify(usuario.cursos, null, 2)}`);
+
+    // Extraer todos los temas de los cursos del usuario
+    const todosLosTemas = usuario.cursos.reduce((acumulador, curso) => {
+      return acumulador.concat(curso.temas);
+    }, []);
+
+    console.log(`Temas encontrados: ${JSON.stringify(todosLosTemas, null, 2)}`);
+
+    // Obtener los IDs de los temas encontrados
+    const temasIds = todosLosTemas.map(tema => tema._id);
+
+    // Buscar exámenes que tengan temaId coincidente con los temas encontrados
+    const examenesRelacionados = await Examen.find({ temaId: { $in: temasIds } });
+
+    // Mostrar solo los IDs de los exámenes encontrados
+    const examenesIds = examenesRelacionados.map(examen => examen._id);
+    console.log(`IDs de exámenes relacionados: ${JSON.stringify(examenesIds, null, 2)}`);
+
+    res.json({ temas: todosLosTemas, examenes: examenesRelacionados });
+  } catch (error) {
+    console.error('Error al obtener los temas del usuario:', error);
+    res.status(500).json({ message: 'Error al obtener los temas del usuario.' });
+  }
+});
+
+
 module.exports = router;

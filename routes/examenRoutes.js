@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const Examen = require('../models/examen');
 const Usuario = require('../models/usuario');
+const Curso = require('../models/cursos');
+
 
 // Ruta para guardar resultados de exámenes
 router.post('/examenes', async (req, res) => {
@@ -83,7 +85,32 @@ router.put('/examenes/:id/toggle', async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
+  
 });
+
+
+// Nueva ruta para obtener un examen específico por id
+router.get('/examenes/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const examen = await Examen.findById(id)
+      .populate('usuarioId', 'matricula datos_personales')
+      .populate('temaId', 'titulo');
+
+    if (examen) {
+      res.status(200).json(examen);
+    } else {
+      res.status(404).json({ message: 'Examen no encontrado' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+
+
+
+
 
 module.exports = router;
 

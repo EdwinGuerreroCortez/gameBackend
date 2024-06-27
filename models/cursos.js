@@ -8,7 +8,12 @@ const nombreCursoSchema = new mongoose.Schema({
   temas: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Tema' // Referencia al modelo de temas
-  }]
+  }],
+  usuario: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Usuario', // Referencia al modelo de usuarios
+    required: true,
+  }
 }, { collection: 'cursos' });
 
 const Curso = mongoose.model('Curso', nombreCursoSchema);

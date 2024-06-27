@@ -100,7 +100,11 @@ const usuarioSchema = new mongoose.Schema({
   autorizacion: {
     type: Boolean,
     default: false,
-  }
+  },
+  cursos: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Curso'
+  }]
 });
 
 const Usuario = mongoose.model('Usuario', usuarioSchema);
