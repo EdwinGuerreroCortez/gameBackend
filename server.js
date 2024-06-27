@@ -10,6 +10,7 @@ const misionVisionRoutes = require('./routes/misionVisionRoutes');
 const temaRoutes = require('./routes/temaRoutes');
 const evaluacionRoutes = require('./routes/evaluacionRoutes');
 const examenRoutes = require('./routes/examenRoutes'); // Importa las nuevas rutas de exámenes
+const cursosRoutes = require('./routes/cursosRoutes')
 
 
 const app = express(); 
@@ -33,6 +34,7 @@ app.use('/api', misionVisionRoutes);
 app.use('/api', temaRoutes);
 app.use('/api', evaluacionRoutes);
 app.use('/api', examenRoutes); // Añadir esta línea
+app.use('/api', cursosRoutes);
 
 
 // Iniciar el servidor
