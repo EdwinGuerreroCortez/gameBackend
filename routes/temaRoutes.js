@@ -271,25 +271,16 @@ router.post('/subir-temas', async (req, res) => {
 
   try {
     const savedTemas = await Promise.all(temas.map(async (tema) => {
-      // Crear el nuevo tema con todos los campos
       const newTema = new Tema({
         titulo: tema.titulo,
         descripcion: tema.descripcion,
         responsable: tema.responsable,
         bibliografia: tema.bibliografia,
-        pasos: tema.pasos.map(paso => ({
-          Titulo: paso.Titulo,
-          Descripcion: paso.Descripcion
-        })), // Procesar los pasos
-        subtemas: tema.subtemas.map(subtema => ({
-          titulo: subtema.Titulo,
-          descripcion: subtema.Descripcion,
-          video: subtema.Link
-        })), // Procesar los subtemas para asegurarse de que se guarden correctamente
+        pasos: tema.pasos,
+        subtemas: tema.subtemas, // Asegurarse de incluir los subtemas aquí
         video: null,
         evaluacion_id: null,
       });
-
       console.log('Guardando tema:', newTema); // Log del tema antes de guardarlo
       return await newTema.save();
     }));
@@ -301,7 +292,6 @@ router.post('/subir-temas', async (req, res) => {
     res.status(500).json({ error: 'Error guardando los temas: ' + error.message });
   }
 });
-
 // Endpoint para subir un tema con video, pasos y subtemas
 router.post('/subirTema', upload.single('video'), async (req, res) => {
   try {
