@@ -9,8 +9,8 @@ const nombreCursoSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Tema' // Referencia al modelo de temas
   }]
-}, { collection: 'cursos' }); // Especificar el nombre de la colección
+}, { collection: 'cursos' });
 
-const NombreCurso = mongoose.model('NombreCurso', nombreCursoSchema);
+const Curso = mongoose.model('Curso', nombreCursoSchema);
 
-module.exports = NombreCurso;
+module.exports = Curso;

@@ -4,6 +4,8 @@ const cloudinary = require('cloudinary').v2;
 const streamifier = require('streamifier');
 const XLSX = require('xlsx');
 const Tema = require('../models/tema');
+const Curso = require('../models/cursos'); // Asegúrate de que la ruta sea correcta
+
 const router = express.Router();
 
 const storage = multer.memoryStorage();
@@ -267,7 +269,11 @@ router.get('/download-plantilla', (req, res) => {
 
 // Endpoint para subir todos los temas
 router.post('/subir-temas', async (req, res) => {
-  const { temas } = req.body;
+  const { temas, cursoId } = req.body;
+
+  if (!cursoId) {
+    return res.status(400).json({ error: 'cursoId es requerido' });
+  }
 
   try {
     const savedTemas = await Promise.all(temas.map(async (tema) => {
@@ -277,15 +283,20 @@ router.post('/subir-temas', async (req, res) => {
         responsable: tema.responsable,
         bibliografia: tema.bibliografia,
         pasos: tema.pasos,
-        subtemas: tema.subtemas, // Asegurarse de incluir los subtemas aquí
+        subtemas: tema.subtemas,
         video: null,
         evaluacion_id: null,
+        curso: cursoId // Asigna el cursoId al campo curso del tema
       });
-      console.log('Guardando tema:', newTema); // Log del tema antes de guardarlo
-      return await newTema.save();
+
+      const savedTema = await newTema.save();
+
+      // Actualiza el curso para incluir el nuevo tema
+      await Curso.findByIdAndUpdate(cursoId, { $push: { temas: savedTema._id } });
+
+      return savedTema;
     }));
 
-    console.log('Temas guardados:', savedTemas); // Log de temas guardados
     res.status(200).json(savedTemas);
   } catch (error) {
     console.error('Error guardando los temas:', error);

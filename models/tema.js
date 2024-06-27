@@ -18,10 +18,11 @@ const TemaSchema = new mongoose.Schema({
   bibliografia: { type: String, required: true },
   pasos: [PasoSchema],
   subtemas: { type: [SubtemaSchema], default: [] },
-    video: { type: String, default: null },
+  video: { type: String, default: null },
   evaluacion_id: { type: mongoose.Schema.Types.ObjectId, ref: 'Evaluacion' },
   habilitado: { type: Boolean, default: false },
   fecha_creacion: { type: Date, default: Date.now },
+  curso: { type: mongoose.Schema.Types.ObjectId, ref: 'Curso' }, // Referencia al curso
 });
 
 module.exports = mongoose.model('Tema', TemaSchema);
