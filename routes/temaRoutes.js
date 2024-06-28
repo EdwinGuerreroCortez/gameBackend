@@ -307,10 +307,10 @@ router.post('/subir-temas', async (req, res) => {
 // Endpoint para subir un tema con video, pasos y subtemas
 router.post('/subirTema', upload.single('video'), async (req, res) => {
   try {
-    const { titulo, descripcion, responsable, bibliografia, pasos, subtemas } = req.body;
+    const { titulo, descripcion, responsable, bibliografia, pasos, subtemas, curso } = req.body; // Added `curso` to the request body
     const videoFile = req.file;
 
-    if (!titulo || !descripcion || !responsable || !bibliografia) {
+    if (!titulo || !descripcion || !responsable || !bibliografia || !curso) { // Ensure `curso` is provided
       return res.status(400).json({ error: 'Todos los campos son obligatorios' });
     }
 
@@ -368,9 +368,14 @@ router.post('/subirTema', upload.single('video'), async (req, res) => {
       video: videoUrl,
       evaluacion_id: null,
       fecha_creacion: new Date(),
+      curso // Store the course ID in the new topic
     });
 
     const savedTema = await newTema.save();
+
+    // Update the course to include the new topic's ObjectId
+    await Curso.findByIdAndUpdate(curso, { $push: { temas: savedTema._id } });
+
     res.status(200).json(savedTema);
   } catch (error) {
     console.error('Error creando el tema:', error);
