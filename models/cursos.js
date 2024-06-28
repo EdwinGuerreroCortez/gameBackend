@@ -12,7 +12,7 @@ const nombreCursoSchema = new mongoose.Schema({
   usuario: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Usuario', // Referencia al modelo de usuarios
-    required: true,
+    default: null
   }
 }, { collection: 'cursos' });
 
