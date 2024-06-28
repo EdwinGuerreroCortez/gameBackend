@@ -156,37 +156,52 @@ router.put('/usuarios/:id/imagen', async (req, res) => {
     }
 });
 
-//endpoint para añadir admin o docente 
+// Endpoint para añadir admin o docente
 router.post('/usuarios/admin', async (req, res) => {
-    try {
-      const hashedPassword = await bcrypt.hash(req.body.contrasena, 10);
-  
-      const nuevoUsuario = new Usuario({
-        username: req.body.nomusuario,
-        password: hashedPassword,
-        tipo: req.body.tipo,
-        datos_personales: {
-          nombre: req.body.nombre,
-          apellido_paterno: req.body.apellidoPaterno,
-          apellido_materno: req.body.apellidoMaterno,
-          correo: req.body.correo,
-          edad:  '0',
-          genero: req.body.genero,
-          telefono: req.body.telefono,
-          grado_de_estudios: 'N/A', // Valor predeterminado
-        },
-        experiencia_en_lenguaje_de_programacion: [], // Valor predeterminado
-        evaluaciones_realizadas: [], // Valor predeterminado
-        autorizacion: true, // Asegurarte de establecer este campo
-      });
-  
-      await nuevoUsuario.save();
-      res.status(201).json(nuevoUsuario);
-    } catch (error) {
-      console.error('Error al guardar el usuario:', error); // Depuración: Imprimir error
-      res.status(400).json({ message: error.message });
+  try {
+    const { correo, telefono, nomusuario, contrasena, tipo, nombre, apellidoPaterno, apellidoMaterno, genero } = req.body;
+
+    // Verificar si ya existe un usuario con el mismo correo
+    const usuarioExistentePorCorreo = await Usuario.findOne({ 'datos_personales.correo': correo });
+    if (usuarioExistentePorCorreo) {
+      return res.status(400).json({ error: 'El correo ya está registrado. Por favor, use otro correo.' });
     }
-  });
+
+    // Verificar si ya existe un usuario con el mismo teléfono
+    const usuarioExistentePorTelefono = await Usuario.findOne({ 'datos_personales.telefono': telefono });
+    if (usuarioExistentePorTelefono) {
+      return res.status(400).json({ error: 'El teléfono ya está registrado. Por favor, use otro teléfono.' });
+    }
+
+    const hashedPassword = await bcrypt.hash(contrasena, 10);
+
+    const nuevoUsuario = new Usuario({
+      username: nomusuario,
+      password: hashedPassword,
+      tipo: tipo,
+      datos_personales: {
+        nombre: nombre,
+        apellido_paterno: apellidoPaterno,
+        apellido_materno: apellidoMaterno,
+        correo: correo,
+        edad: '0',
+        genero: genero,
+        telefono: telefono,
+        grado_de_estudios: 'N/A', // Valor predeterminado
+      },
+      experiencia_en_lenguaje_de_programacion: [], // Valor predeterminado
+      evaluaciones_realizadas: [], // Valor predeterminado
+      autorizacion: true, // Asegurarte de establecer este campo
+    });
+
+    await nuevoUsuario.save();
+    res.status(201).json(nuevoUsuario);
+  } catch (error) {
+    console.error('Error al guardar el usuario:', error); // Depuración: Imprimir error
+    res.status(400).json({ message: error.message });
+  }
+});
+
   
 // Endpoint para eliminar un usuario por ID
 router.delete('/usuarios/:id', async (req, res) => {

@@ -303,6 +303,7 @@ router.post('/subir-temas', async (req, res) => {
     res.status(500).json({ error: 'Error guardando los temas: ' + error.message });
   }
 });
+
 // Endpoint para subir un tema con video, pasos y subtemas
 router.post('/subirTema', upload.single('video'), async (req, res) => {
   try {
