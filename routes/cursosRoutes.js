@@ -4,6 +4,15 @@ const Curso = require('../models/cursos'); // Reemplaza con la ruta correcta a t
 const Tema = require('../models/tema'); // Asegúrate de que la ruta sea correcta
 const Usuario = require('../models/usuario');
 
+//Endpoint para obtener los cursos
+router.get('/cursos', async (req, res) => {
+  try {
+    const cursos = await Curso.find().populate('temas');
+    res.json(cursos);
+  } catch (error) {
+    res.status(500).json({ error: 'Error al obtener los cursos' });
+  }
+});
 
 // Endpoint para obtener los temas de un curso específico
 router.get('/cursos/:cursoId/temas', async (req, res) => {
