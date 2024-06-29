@@ -6,9 +6,6 @@ const Curso = require('../models/cursos'); // Reemplaza con la ruta correcta a t
 const Tema = require('../models/tema'); // Asegúrate de que la ruta sea correcta
 const Examen = require('../models/examen');
 
-
-
-
 // Endpoint para obtener todos los usuarios
 router.get('/usuarios', async (req, res) => {
     try {
@@ -92,8 +89,7 @@ router.post('/login', async (req, res) => {
     } catch (error) {
       res.status(500).json({ message: error.message });
     }
-  });
-  
+  });  
 
 // Endpoint para obtener un usuario por ID
 router.get('/usuarios/:id', async (req, res) => {
@@ -201,7 +197,6 @@ router.post('/usuarios/admin', async (req, res) => {
     res.status(400).json({ message: error.message });
   }
 });
-
   
 // Endpoint para eliminar un usuario por ID
 router.delete('/usuarios/:id', async (req, res) => {
@@ -241,6 +236,7 @@ router.post('/usuarios/:id/evaluaciones', async (req, res) => {
       res.status(500).json({ message: error.message });
     }
 });
+
 router.put('/usuarios/:id/autorizar', async (req, res) => {
     try {
       const { autorizacion } = req.body;
@@ -258,6 +254,77 @@ router.put('/usuarios/:id/autorizar', async (req, res) => {
     }
   });
   
+// Endpoint para verificar suscripción al curso
+router.post('/usuarios/:usuarioId/verificar-suscripcion/:cursoId', async (req, res) => {
+  const { usuarioId, cursoId } = req.params;
+
+  try {
+    // Buscar el usuario por ID
+    const usuario = await Usuario.findById(usuarioId);
+    if (!usuario) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+
+    // Buscar el curso por ID
+    const curso = await Curso.findById(cursoId);
+    if (!curso) {
+      return res.status(404).json({ message: 'Curso no encontrado' });
+    }
+
+    // Verificar si el usuario ya está suscrito al curso
+    if (usuario.cursosSubscritos && usuario.cursosSubscritos.includes(cursoId)) {
+      const subscritor = curso.subscritores.find(sub => sub.usuario.toString() === usuarioId);
+      if (subscritor) {
+        if (!subscritor.banear) {
+          return res.status(200).json({ message: 'Ya estás suscrito a este curso y tienes acceso.' });
+        } else {
+          return res.status(403).json({ message: 'Has sido baneado de este curso.' });
+        }
+      }
+    } else {
+      return res.status(200).json({ message: 'No estás suscrito a este curso. ¿Deseas suscribirte?' });
+    }
+  } catch (error) {
+    console.error('Error al verificar suscripción al curso:', error);
+    return res.status(500).json({ message: 'Error al verificar suscripción al curso.', error: error.message });
+  }
+});
+
+// Endpoint para suscribirse al curso
+router.post('/usuarios/:usuarioId/suscribirse/:cursoId', async (req, res) => {
+  const { usuarioId, cursoId } = req.params;
+
+  try {
+    // Buscar el usuario por ID
+    const usuario = await Usuario.findById(usuarioId);
+    if (!usuario) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+
+    // Buscar el curso por ID
+    const curso = await Curso.findById(cursoId);
+    if (!curso) {
+      return res.status(404).json({ message: 'Curso no encontrado' });
+    }
+
+    // Añadir el ID del curso al array cursosSubscritos del usuario
+    usuario.cursosSubscritos = usuario.cursosSubscritos || [];
+    usuario.cursosSubscritos.push(cursoId);
+
+    // Añadir el ID del usuario al array subcritores del curso
+    curso.subscritores = curso.subscritores || [];
+    curso.subscritores.push({ usuario: usuarioId, banear: false });
+
+    // Guardar los cambios en ambos documentos
+    await usuario.save();
+    await curso.save();
+
+    return res.status(200).json({ message: 'Te has suscrito al curso exitosamente.', usuario, curso });
+  } catch (error) {
+    console.error('Error al suscribirse al curso:', error);
+    return res.status(500).json({ message: 'Error al suscribirse al curso.', error: error.message });
+  }
+});
 
 
 
@@ -266,7 +333,9 @@ router.put('/usuarios/:id/autorizar', async (req, res) => {
 
 
 
-  //Docentes endpoitn
+
+  //****************Docentes endpoitn***********************//
+
   // Endpoint to get courses related to the logged-in user
 router.get('/usuario/:userId/cursos', async (req, res) => {
   try {

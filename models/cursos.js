@@ -13,8 +13,19 @@ const nombreCursoSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Usuario', // Referencia al modelo de usuarios
     default: null
-  }
-}, { collection: 'cursos' });
+  },
+  subscritores: [{
+    usuario: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Usuario'
+    },
+    banear: {
+      type: Boolean,
+      default: true
+    }
+  }]
+}, 
+{ collection: 'cursos' });
 
 const Curso = mongoose.model('Curso', nombreCursoSchema);
 

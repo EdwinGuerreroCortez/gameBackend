@@ -104,6 +104,10 @@ const usuarioSchema = new mongoose.Schema({
   cursos: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Curso'
+  }],
+  cursosSubscritos: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Curso'
   }]
 });
 
