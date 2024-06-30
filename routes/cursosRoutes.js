@@ -99,5 +99,45 @@ router.post('/crearCursoAsignarUsuario', async (req, res) => {
   }
 });
 
+// Endpoint to get courses and their subscribers
+router.get('/cursos-subscritores/:userId', async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const cursos = await Curso.find({ usuario: userId }).populate('subscritores.usuario', 'datos_personales');
 
+    if (!cursos) {
+      return res.status(404).json({ message: 'Cursos no encontrados' });
+    }
+
+    res.json(cursos);
+  } catch (error) {
+    console.error('Error al obtener los cursos y sus subscritores:', error);
+    res.status(500).json({ message: 'Error al obtener los cursos y sus subscritores.' });
+  }
+});
+
+// Endpoint to update the ban state of a subscriber
+router.put('/cursos/:cursoId/subscritores/:subId/banear', async (req, res) => {
+  try {
+    const { cursoId, subId } = req.params;
+    const curso = await Curso.findById(cursoId);
+
+    if (!curso) {
+      return res.status(404).json({ message: 'Curso no encontrado' });
+    }
+
+    const subscritor = curso.subscritores.id(subId);
+    if (!subscritor) {
+      return res.status(404).json({ message: 'Subscritor no encontrado' });
+    }
+
+    subscritor.banear = !subscritor.banear;
+    await curso.save();
+
+    res.json({ message: 'Estado de ban actualizado', subscritor });
+  } catch (error) {
+    console.error('Error al actualizar el estado de ban:', error);
+    res.status(500).json({ message: 'Error al actualizar el estado de ban.' });
+  }
+});
 module.exports = router;
