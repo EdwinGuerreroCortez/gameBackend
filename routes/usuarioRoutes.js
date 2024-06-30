@@ -215,26 +215,28 @@ router.delete('/usuarios/:id', async (req, res) => {
 
 // Endpoint para guardar resultados de evaluaciones
 router.post('/usuarios/:id/evaluaciones', async (req, res) => {
-    try {
-      const { temaId, porcentaje, preguntasRespondidas } = req.body;
-      const usuario = await Usuario.findById(req.params.id);
-  
-      if (!usuario) {
-        return res.status(404).json({ message: 'Usuario no encontrado' });
-      }
-  
-      usuario.evaluaciones_realizadas.push({
-        tema_id: temaId,
-        porcentaje,
-        preguntas_respondidas: preguntasRespondidas,
-      });
-  
-      await usuario.save();
-  
-      res.status(200).json({ message: 'Evaluación guardada exitosamente' });
-    } catch (error) {
-      res.status(500).json({ message: error.message });
+  try {
+    const { tema_id, porcentaje, preguntas_respondidas, examen_id } = req.body;
+    const userId = req.params.id;
+
+    const usuario = await Usuario.findById(userId);
+
+    if (!usuario) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
     }
+
+    usuario.evaluaciones_realizadas.push({
+      tema_id,
+      porcentaje,
+      preguntas_respondidas,
+      examen_id
+    });
+
+    await usuario.save();
+    res.status(200).json({ message: 'Evaluación del usuario guardada exitosamente' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 });
 
 router.put('/usuarios/:id/autorizar', async (req, res) => {
