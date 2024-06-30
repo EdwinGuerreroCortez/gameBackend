@@ -98,7 +98,21 @@ router.post('/crearCursoAsignarUsuario', async (req, res) => {
     res.status(400).json({ message: error.message });
   }
 });
+// Endpoint para obtener todos los cursos y sus suscriptores
+router.get('/cursos-subscritores', async (req, res) => {
+  try {
+    const cursos = await Curso.find({ usuario: null }).populate('subscritores.usuario', 'datos_personales');
 
+    if (!cursos) {
+      return res.status(404).json({ message: 'Cursos no encontrados' });
+    }
+
+    res.json(cursos);
+  } catch (error) {
+    console.error('Error al obtener los cursos y sus subscritores:', error);
+    res.status(500).json({ message: 'Error al obtener los cursos y sus subscritores.' });
+  }
+});
 // Endpoint to get courses and their subscribers
 router.get('/cursos-subscritores/:userId', async (req, res) => {
   try {
