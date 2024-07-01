@@ -70,31 +70,8 @@ const usuarioSchema = new mongoose.Schema({
   },
   evaluaciones_realizadas: [
     {
-      tema_id: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Evaluacion',
-        required: true,
-      },
-      porcentaje: {
-        type: Number,
-        required: true,
-      },
-      preguntas_respondidas: [
-        {
-          pregunta: {
-            type: String,
-            required: true,
-          },
-          respuesta: {
-            type: String,
-            required: true,
-          },
-          correcta: {
-            type: Boolean,
-            required: true,
-          },
-        },
-      ],
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Examen', // Referencia a la colección de exámenes
     },
   ],
   autorizacion: {

@@ -70,6 +70,30 @@ router.get('/examenes/:usuarioId/:temaId', async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
+
+// Endpoint para obtener el último examen realizado por un usuario para un tema específico
+router.get('/examenes/:userId/:temaId/ultimo', async (req, res) => {
+  const { userId, temaId } = req.params;
+
+  try {
+    // Encontrar el examen realizado por el usuario para el tema específico
+    const examen = await Examen.findOne({ usuarioId: userId, temaId: temaId });
+
+    if (!examen) {
+      return res.status(404).json({ message: 'No se encontró ningún examen para este usuario y tema' });
+    }
+
+    // Ordenar el arreglo de preguntasRespondidas para obtener el último intento
+    examen.preguntasRespondidas.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+    
+    // Devolver el examen con las respuestas más recientes al inicio
+    res.json(examen);
+  } catch (error) {
+    console.error('Error al obtener el último examen:', error);
+    res.status(500).json({ message: 'Error al obtener el último examen.', error: error.message });
+  }
+});
+
 // Nueva ruta para cambiar el estado de examenPermitido
 router.put('/examenes/:id/toggle', async (req, res) => {
   try {
