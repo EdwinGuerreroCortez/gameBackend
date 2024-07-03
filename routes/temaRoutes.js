@@ -134,6 +134,11 @@ router.delete('/temas/:id', async (req, res) => {
       await Evaluacion.findByIdAndDelete(tema.evaluacion_id);
     }
 
+    // Eliminar la referencia al tema en el curso
+    if (tema.curso) {
+      await Curso.findByIdAndUpdate(tema.curso, { $pull: { temas: tema._id } });
+    }
+
     await Tema.deleteOne({ _id: req.params.id });
     res.json({ message: 'Tema y cuestionario relacionado eliminados con éxito' });
   } catch (error) {
@@ -142,7 +147,8 @@ router.delete('/temas/:id', async (req, res) => {
 });
 
 
-// Endpoint para generar y descargar el archivo Excel basado en el tema seleccionado
+
+// Endpoint for generating and downloading the Excel file based on the selected theme
 router.get('/download-tema/:id', async (req, res) => {
   try {
     const tema = await Tema.findById(req.params.id);
@@ -150,21 +156,37 @@ router.get('/download-tema/:id', async (req, res) => {
       return res.status(404).json({ message: 'Tema no encontrado' });
     }
 
-    // Crear un nuevo libro de trabajo y una hoja de trabajo
-    const workbook = XLSX.utils.book_new();
+    // Prepare data for the Excel file
     const worksheetData = [
-      { titulo: tema.titulo, descripcion: tema.descripcion, responsable: tema.responsable, bibliografia: tema.bibliografia }
+      {
+        titulo: tema.titulo,
+        descripcion: tema.descripcion,
+        responsable: tema.responsable,
+        pasos: tema.pasos[0]?.Titulo || '',
+        Descripcion: tema.pasos[0]?.Descripcion || '',
+        bibliografia: tema.bibliografia,
+        subtema: tema.subtemas[0]?.titulo || '',
+        descripcionSubtema: tema.subtemas[0]?.descripcion || ''
+      },
+      // Add more rows if there are more steps or subtopics
+      ...tema.pasos.slice(1).map((paso, index) => ({
+        titulo: '',
+        descripcion: '',
+        responsable: '',
+        pasos: paso.Titulo,
+        Descripcion: paso.Descripcion,
+        bibliografia: '',
+        subtema: tema.subtemas[index + 1]?.titulo || '',
+        descripcionSubtema: tema.subtemas[index + 1]?.descripcion || ''
+      }))
     ];
 
-    tema.pasos.forEach((paso, index) => {
-      worksheetData[0][`pasoTitulo${index + 1}`] = paso.Titulo;
-      worksheetData[0][`pasoDescripcion${index + 1}`] = paso.Descripcion;
-    });
-
+    // Create a new workbook and add the worksheet data
+    const workbook = XLSX.utils.book_new();
     const worksheet = XLSX.utils.json_to_sheet(worksheetData);
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Tema');
 
-    // Enviar el archivo Excel al cliente
+    // Send the Excel file to the client
     const buffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'buffer' });
     res.setHeader('Content-Disposition', `attachment; filename=${tema.titulo}.xlsx`);
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
@@ -311,43 +333,6 @@ router.post('/subir-temas', async (req, res) => {
     return res.status(400).json({ error: 'cursoId es requerido' });
   }
 
-  try {
-    const savedTemas = await Promise.all(temas.map(async (tema) => {
-      const newTema = new Tema({
-        titulo: tema.titulo,
-        descripcion: tema.descripcion,
-        responsable: tema.responsable,
-        bibliografia: tema.bibliografia,
-        pasos: tema.pasos,
-        subtemas: tema.subtemas,
-        video: null,
-        evaluacion_id: null,
-        curso: cursoId // Asigna el cursoId al campo curso del tema
-      });
-
-      const savedTema = await newTema.save();
-
-      // Actualiza el curso para incluir el nuevo tema
-      await Curso.findByIdAndUpdate(cursoId, { $push: { temas: savedTema._id } });
-
-      return savedTema;
-    }));
-
-    res.status(200).json(savedTemas);
-  } catch (error) {
-    console.error('Error guardando los temas:', error);
-    res.status(500).json({ error: 'Error guardando los temas: ' + error.message });
-  }
-});
-
-// Endpoint para subir un tema con video, pasos y subtemas
-router.post('/subir-temas', async (req, res) => {
-  const { temas, cursoId } = req.body;
-
-  if (!cursoId) {
-    return res.status(400).json({ error: 'cursoId es requerido' });
-  }
-
   const validationErrors = validateExcelData(temas);
   if (validationErrors.length > 0) {
     return res.status(400).json({ error: 'Errores de validación', details: validationErrors });
@@ -381,6 +366,86 @@ router.post('/subir-temas', async (req, res) => {
   }
 });
 
+// Endpoint para subir un tema con video, pasos y subtemas
+router.post('/subirTema', upload.single('video'), async (req, res) => {
+  try {
+    const { titulo, descripcion, responsable, bibliografia, pasos, subtemas, curso } = req.body; // Added `curso` to the request body
+    const videoFile = req.file;
+
+    if (!titulo || !descripcion || !responsable || !bibliografia || !curso) { // Ensure `curso` is provided
+      return res.status(400).json({ error: 'Todos los campos son obligatorios' });
+    }
+
+    const parsedPasos = JSON.parse(pasos);
+    const parsedSubtemas = subtemas ? JSON.parse(subtemas) : [];
+
+    if (parsedPasos.length === 0) {
+      return res.status(400).json({ error: 'Debe haber al menos un paso definido.' });
+    }
+
+    for (const paso of parsedPasos) {
+      if (!paso.Titulo || !paso.Descripcion) {
+        return res.status(400).json({ error: 'Cada paso debe tener un título y una descripción.' });
+      }
+    }
+
+    for (const subtema of parsedSubtemas) {
+      if (!subtema.Titulo || !subtema.Descripcion) {
+        return res.status(400).json({ error: 'Cada subtema debe tener un título y una descripción.' });
+      }
+    }
+
+    const uploadVideo = () => {
+      return new Promise((resolve, reject) => {
+        const cld_upload_stream = cloudinary.uploader.upload_stream(
+          { resource_type: 'video', folder: 'videos' },
+          (error, result) => {
+            if (error) {
+              reject(error);
+            } else {
+              resolve(result.secure_url);
+            }
+          }
+        );
+        streamifier.createReadStream(videoFile.buffer).pipe(cld_upload_stream);
+      });
+    };
+
+    let videoUrl = null;
+    if (videoFile) {
+      videoUrl = await uploadVideo();
+    }
+
+    const newTema = new Tema({
+      titulo,
+      descripcion,
+      responsable,
+      bibliografia,
+      pasos: parsedPasos,
+      subtemas: parsedSubtemas.map(subtema => ({
+        titulo: subtema.Titulo,
+        descripcion: subtema.Descripcion,
+        video: subtema.Link || null
+      })), // Procesar los subtemas para asegurarse de que se guarden correctamente
+      video: videoUrl,
+      evaluacion_id: null,
+      fecha_creacion: new Date(),
+      curso // Store the course ID in the new topic
+    });
+
+    const savedTema = await newTema.save();
+
+    // Update the course to include the new topic's ObjectId
+    await Curso.findByIdAndUpdate(curso, { $push: { temas: savedTema._id } });
+
+    res.status(200).json(savedTema);
+  } catch (error) {
+    console.error('Error creando el tema:', error);
+    res.status(500).json({ error: 'Error creando el tema. Inténtalo de nuevo.' });
+  }
+});
+
+
 // Endpoint para habilitar o deshabilitar un tema
 router.put('/temas/:id/habilitar', async (req, res) => {
   try {
@@ -398,5 +463,85 @@ router.put('/temas/:id/habilitar', async (req, res) => {
     res.status(500).json({ error: 'Error actualizando el estado de habilitación del tema.' });
   }
 });
+// Endpoint para subir un video o link de video para un subtema
+router.post('/upload-subtema-video/:id/:subtemaId', upload.single('video'), async (req, res) => {
+  try {
+    const { id, subtemaId } = req.params;
+    const videoFile = req.file;
+    const { videoLink } = req.body;
+
+    if (!videoFile && !videoLink) {
+      return res.status(400).json({ error: 'No se ha proporcionado ningún video ni link.' });
+    }
+
+    const tema = await Tema.findById(id);
+    if (!tema) {
+      return res.status(404).json({ message: 'Tema no encontrado' });
+    }
+
+    const subtema = tema.subtemas.id(subtemaId);
+    if (!subtema) {
+      return res.status(404).json({ message: 'Subtema no encontrado' });
+    }
+
+    if (videoFile) {
+      const uploadVideo = () => {
+        return new Promise((resolve, reject) => {
+          const cld_upload_stream = cloudinary.uploader.upload_stream(
+            { resource_type: 'video', folder: 'subtema_videos' },
+            (error, result) => {
+              if (error) {
+                reject(error);
+              } else {
+                resolve(result.secure_url);
+              }
+            }
+          );
+          streamifier.createReadStream(videoFile.buffer).pipe(cld_upload_stream);
+        });
+      };
+
+      const videoUrl = await uploadVideo();
+      subtema.video = videoUrl;
+    } else if (videoLink) {
+      subtema.video = videoLink;
+    }
+
+    await tema.save();
+
+    res.status(200).json({ videoUrl: subtema.video });
+  } catch (error) {
+    console.error('Error subiendo el video o guardando el link:', error);
+    res.status(500).json({ error: 'Error subiendo el video o guardando el link. Inténtalo de nuevo.' });
+  }
+});
+
+
+
+// Endpoint for uploading a video link for a general video
+router.post('/upload-video-link/:id', async (req, res) => {
+  try {
+    const temaId = req.params.id;
+    const { videoLink } = req.body;
+
+    if (!videoLink) {
+      return res.status(400).json({ error: 'No se ha proporcionado ningún link.' });
+    }
+
+    const tema = await Tema.findById(temaId);
+    if (!tema) {
+      return res.status(404).json({ message: 'Tema no encontrado' });
+    }
+
+    tema.video = videoLink;
+    await tema.save();
+
+    res.status(200).json({ videoUrl: tema.video });
+  } catch (error) {
+    console.error('Error guardando el link de video:', error);
+    res.status(500).json({ error: 'Error guardando el link de video. Inténtalo de nuevo.' });
+  }
+});
+
 
 module.exports = router;
