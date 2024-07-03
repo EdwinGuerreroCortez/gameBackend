@@ -341,7 +341,7 @@ router.post('/subir-temas', async (req, res) => {
 });
 
 // Endpoint para subir un tema con video, pasos y subtemas
-rrouter.post('/subir-temas', async (req, res) => {
+router.post('/subir-temas', async (req, res) => {
   const { temas, cursoId } = req.body;
 
   if (!cursoId) {
