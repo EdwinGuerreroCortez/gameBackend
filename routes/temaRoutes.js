@@ -28,13 +28,41 @@ const cleanColumnNames = (data) => {
   return cleanedData;
 };
 
-const validateExcelData = (data, requiredColumns) => {
+const validateExcelData = (data) => {
   let errors = [];
+  data.forEach((tema, index) => {
+    const rowIndex = index + 2; // Índice de fila Excel (1-based)
 
-  requiredColumns.forEach(column => {
-    if (!data.hasOwnProperty(column) || !data[column].trim()) {
-      errors.push(`El campo "${column}" es obligatorio y no puede estar vacío.`);
+    if (!tema.titulo.trim()) {
+      errors.push(`El campo "título" en la fila ${rowIndex} está vacío.`);
     }
+    if (!tema.descripcion.trim()) {
+      errors.push(`El campo "descripción" en la fila ${rowIndex} está vacío.`);
+    }
+    if (!tema.responsable.trim()) {
+      errors.push(`El campo "responsable" en la fila ${rowIndex} está vacío.`);
+    }
+    if (!tema.bibliografia.trim()) {
+      errors.push(`El campo "bibliografía" en la fila ${rowIndex} está vacío.`);
+    }
+
+    tema.pasos.forEach((paso, pasoIndex) => {
+      if (!paso.Titulo.trim()) {
+        errors.push(`El Título del paso ${pasoIndex + 1} en la fila ${rowIndex} está vacío.`);
+      }
+      if (!paso.Descripcion.trim()) {
+        errors.push(`La Descripción del paso ${pasoIndex + 1} en la fila ${rowIndex} está vacía.`);
+      }
+    });
+
+    tema.subtemas.forEach((subtema, subtemaIndex) => {
+      if (!subtema.titulo.trim()) {
+        errors.push(`El título del subtema ${subtemaIndex + 1} en la fila ${rowIndex} está vacío.`);
+      }
+      if (!subtema.descripcion.trim()) {
+        errors.push(`La descripción del subtema ${subtemaIndex + 1} en la fila ${rowIndex} está vacía.`);
+      }
+    });
   });
 
   return errors;
@@ -313,81 +341,43 @@ router.post('/subir-temas', async (req, res) => {
 });
 
 // Endpoint para subir un tema con video, pasos y subtemas
-router.post('/subirTema', upload.single('video'), async (req, res) => {
+rrouter.post('/subir-temas', async (req, res) => {
+  const { temas, cursoId } = req.body;
+
+  if (!cursoId) {
+    return res.status(400).json({ error: 'cursoId es requerido' });
+  }
+
+  const validationErrors = validateExcelData(temas);
+  if (validationErrors.length > 0) {
+    return res.status(400).json({ error: 'Errores de validación', details: validationErrors });
+  }
+
   try {
-    const { titulo, descripcion, responsable, bibliografia, pasos, subtemas, curso } = req.body; // Added `curso` to the request body
-    const videoFile = req.file;
-
-    if (!titulo || !descripcion || !responsable || !bibliografia || !curso) { // Ensure `curso` is provided
-      return res.status(400).json({ error: 'Todos los campos son obligatorios' });
-    }
-
-    const parsedPasos = JSON.parse(pasos);
-    const parsedSubtemas = subtemas ? JSON.parse(subtemas) : [];
-
-    if (parsedPasos.length === 0) {
-      return res.status(400).json({ error: 'Debe haber al menos un paso definido.' });
-    }
-
-    for (const paso of parsedPasos) {
-      if (!paso.Titulo || !paso.Descripcion) {
-        return res.status(400).json({ error: 'Cada paso debe tener un título y una descripción.' });
-      }
-    }
-
-    for (const subtema of parsedSubtemas) {
-      if (!subtema.Titulo || !subtema.Descripcion || !subtema.Link) {
-        return res.status(400).json({ error: 'Cada subtema debe tener un título, una descripción y un link.' });
-      }
-    }
-
-    const uploadVideo = () => {
-      return new Promise((resolve, reject) => {
-        const cld_upload_stream = cloudinary.uploader.upload_stream(
-          { resource_type: 'video', folder: 'videos' },
-          (error, result) => {
-            if (error) {
-              reject(error);
-            } else {
-              resolve(result.secure_url);
-            }
-          }
-        );
-        streamifier.createReadStream(videoFile.buffer).pipe(cld_upload_stream);
+    const savedTemas = await Promise.all(temas.map(async (tema) => {
+      const newTema = new Tema({
+        titulo: tema.titulo,
+        descripcion: tema.descripcion,
+        responsable: tema.responsable,
+        bibliografia: tema.bibliografia,
+        pasos: tema.pasos,
+        subtemas: tema.subtemas,
+        video: null,
+        evaluacion_id: null,
+        curso: cursoId
       });
-    };
 
-    let videoUrl = null;
-    if (videoFile) {
-      videoUrl = await uploadVideo();
-    }
+      const savedTema = await newTema.save();
 
-    const newTema = new Tema({
-      titulo,
-      descripcion,
-      responsable,
-      bibliografia,
-      pasos: parsedPasos,
-      subtemas: parsedSubtemas.map(subtema => ({
-        titulo: subtema.Titulo,
-        descripcion: subtema.Descripcion,
-        video: subtema.Link
-      })), // Procesar los subtemas para asegurarse de que se guarden correctamente
-      video: videoUrl,
-      evaluacion_id: null,
-      fecha_creacion: new Date(),
-      curso // Store the course ID in the new topic
-    });
+      await Curso.findByIdAndUpdate(cursoId, { $push: { temas: savedTema._id } });
 
-    const savedTema = await newTema.save();
+      return savedTema;
+    }));
 
-    // Update the course to include the new topic's ObjectId
-    await Curso.findByIdAndUpdate(curso, { $push: { temas: savedTema._id } });
-
-    res.status(200).json(savedTema);
+    res.status(200).json(savedTemas);
   } catch (error) {
-    console.error('Error creando el tema:', error);
-    res.status(500).json({ error: 'Error creando el tema. Inténtalo de nuevo.' });
+    console.error('Error guardando los temas:', error);
+    res.status(500).json({ error: 'Error guardando los temas: ' + error.message });
   }
 });
 
