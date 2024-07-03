@@ -5,6 +5,8 @@ const streamifier = require('streamifier');
 const XLSX = require('xlsx');
 const Tema = require('../models/tema');
 const Curso = require('../models/cursos'); // Asegúrate de que la ruta sea correcta
+const Evaluacion = require('../models/evaluacion');
+
 
 const router = express.Router();
 
@@ -99,12 +101,18 @@ router.delete('/temas/:id', async (req, res) => {
       return res.status(404).json({ message: 'Tema no encontrado' });
     }
 
+    // Eliminar el cuestionario relacionado si existe
+    if (tema.evaluacion_id) {
+      await Evaluacion.findByIdAndDelete(tema.evaluacion_id);
+    }
+
     await Tema.deleteOne({ _id: req.params.id });
-    res.json({ message: 'Tema eliminado con éxito' });
+    res.json({ message: 'Tema y cuestionario relacionado eliminados con éxito' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });
+
 
 // Endpoint para generar y descargar el archivo Excel basado en el tema seleccionado
 router.get('/download-tema/:id', async (req, res) => {

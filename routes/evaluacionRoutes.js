@@ -164,7 +164,12 @@ router.delete('/evaluaciones/:id', async (req, res) => {
       return res.status(404).json({ message: 'Evaluación no encontrada' });
     }
 
+    // Eliminar la relación de la evaluación en el tema asociado
+    await Tema.findByIdAndUpdate(evaluacion.tema_id, { evaluacion_id: null });
+
+    // Eliminar la evaluación
     await Evaluacion.deleteOne({ _id: req.params.id });
+
     res.status(200).json({ message: 'Evaluación eliminada exitosamente' });
   } catch (error) {
     res.status(500).json({ message: 'Error al eliminar la evaluación', error });
