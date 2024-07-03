@@ -36,6 +36,12 @@ router.post('/curso', async (req, res) => {
   const { nombre } = req.body;
 
   try {
+    const existingCurso = await Curso.findOne({ nombre });
+
+    if (existingCurso) {
+      return res.status(400).json({ message: 'El curso ya existe' });
+    }
+
     const nuevoCurso = new Curso({
       nombre,
       temas: [] // Puedes dejar temas vacío inicialmente si es necesario
@@ -48,6 +54,7 @@ router.post('/curso', async (req, res) => {
     res.status(400).json({ message: error.message });
   }
 });
+
 // Endpoint para obtener todos los cursos
 router.get('/cursos', async (req, res) => {
   try {
@@ -81,6 +88,12 @@ router.post('/crearCursoAsignarUsuario', async (req, res) => {
       return res.status(404).json({ message: 'Usuario no encontrado' });
     }
 
+    const existingCurso = await Curso.findOne({ nombre });
+
+    if (existingCurso) {
+      return res.status(400).json({ message: 'El curso ya existe' });
+    }
+
     const nuevoCurso = new Curso({
       nombre,
       usuario: usuario._id,
@@ -98,6 +111,7 @@ router.post('/crearCursoAsignarUsuario', async (req, res) => {
     res.status(400).json({ message: error.message });
   }
 });
+
 // Endpoint para obtener todos los cursos y sus suscriptores
 router.get('/cursos-subscritores', async (req, res) => {
   try {
