@@ -3,7 +3,9 @@ const router = express.Router();
 const Examen = require('../models/examen');
 const Usuario = require('../models/usuario');
 const Curso = require('../models/cursos');
-
+const XLSX = require('xlsx');
+const path = require('path');
+const fs = require('fs');
 
 // Ruta para guardar resultados de exámenes
 router.post('/examenes', async (req, res) => {
@@ -49,13 +51,33 @@ router.get('/examenes', async (req, res) => {
   try {
     const examenes = await Examen.find()
       .populate('usuarioId', 'matricula datos_personales')
-      .populate('temaId', 'titulo');
+      .populate({
+        path: 'temaId',
+        select: 'titulo curso',
+        populate: {
+          path: 'curso',
+          select: 'nombre'
+        }
+      });
 
-    res.status(200).json(examenes);
+    const examenesConCurso = examenes.map(examen => ({
+      _id: examen._id,
+      usuarioId: examen.usuarioId,
+      temaId: examen.temaId._id,
+      tituloTema: examen.temaId.titulo,
+      nombreCurso: examen.temaId.curso ? examen.temaId.curso.nombre : 'Sin curso',
+      intentos: examen.intentos,
+      preguntasRespondidas: examen.preguntasRespondidas,
+      examenPermitido: examen.examenPermitido,
+      nombreCompleto: `${examen.usuarioId.datos_personales.nombre} ${examen.usuarioId.datos_personales.apellido_paterno} ${examen.usuarioId.datos_personales.apellido_materno}`
+    }));
+
+    res.status(200).json(examenesConCurso);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 });
+
 router.get('/examenes/:usuarioId/:temaId', async (req, res) => {
   try {
     const { usuarioId, temaId } = req.params;
@@ -131,6 +153,75 @@ router.get('/examenes/:id', async (req, res) => {
   }
 });
 
+router.get('/concentrado/:curso', async (req, res) => {
+  const { curso } = req.params;
+
+  try {
+    const examenes = await Examen.find()
+      .populate('usuarioId', 'matricula datos_personales')
+      .populate({
+        path: 'temaId',
+        select: 'titulo curso',
+        populate: {
+          path: 'curso',
+          select: 'nombre'
+        }
+      });
+
+    const examenesFiltrados = examenes.filter(examen => examen.temaId.curso && examen.temaId.curso.nombre === curso);
+
+    if (examenesFiltrados.length === 0) {
+      return res.status(404).json({ message: 'No se encontraron exámenes para el curso seleccionado' });
+    }
+
+    const concentrado = examenesFiltrados.reduce((acc, examen) => {
+      const matricula = examen.usuarioId.datos_personales.matricula;
+      const nombreCompleto = `${examen.usuarioId.datos_personales.nombre} ${examen.usuarioId.datos_personales.apellido_paterno} ${examen.usuarioId.datos_personales.apellido_materno}`;
+      if (!acc[matricula]) {
+        acc[matricula] = { matricula, nombreCompleto, calificaciones: [] };
+      }
+      acc[matricula].calificaciones.push(examen.preguntasRespondidas[examen.preguntasRespondidas.length - 1].porcentaje);
+      return acc;
+    }, {});
+
+    const maxEval = Math.max(...Object.values(concentrado).map(item => item.calificaciones.length));
+
+    const concentradoCompleto = Object.values(concentrado).map(item => {
+      const calificacionesCompletas = [...item.calificaciones, ...Array(maxEval - item.calificaciones.length).fill(0)];
+      const promedio = calificacionesCompletas.reduce((acc, cal) => acc + cal, 0) / maxEval;
+      return {
+        Matrícula: item.matricula,
+        'Nombre Completo': item.nombreCompleto,
+        ...calificacionesCompletas.reduce((acc, cal, i) => ({ ...acc, [`Evaluación ${i + 1}`]: cal }), {}),
+        Promedio: promedio.toFixed(2)
+      };
+    });
+
+    const ws = XLSX.utils.json_to_sheet(concentradoCompleto);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Concentrado');
+
+    const cursoNombre = curso;
+    XLSX.utils.sheet_add_aoa(ws, [[`Concentrado de calificaciones de ${cursoNombre}`]], { origin: 'A1' });
+
+    const filePath = path.join(__dirname, `../../concentrado_${cursoNombre}.xlsx`);
+    XLSX.writeFile(wb, filePath);
+
+    res.download(filePath, `Concentrado_${cursoNombre}.xlsx`, (err) => {
+      if (err) {
+        console.error('Error al descargar el archivo:', err);
+      }
+
+      fs.unlink(filePath, (err) => {
+        if (err) {
+          console.error('Error al eliminar el archivo:', err);
+        }
+      });
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
 
 
 
