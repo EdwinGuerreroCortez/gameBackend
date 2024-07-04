@@ -139,12 +139,31 @@ router.put('/examenes/:id/toggle', async (req, res) => {
 router.get('/examenes/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const examen = await Examen.findById(id)
+    let examen = await Examen.findById(id)
       .populate('usuarioId', 'matricula datos_personales')
-      .populate('temaId', 'titulo');
+      .populate({
+        path: 'temaId',
+        select: 'titulo curso',
+        populate: {
+          path: 'curso',
+          select: 'nombre'
+        }
+      });
 
     if (examen) {
-      res.status(200).json(examen);
+      const examenConCurso = {
+        _id: examen._id,
+        usuarioId: examen.usuarioId,
+        temaId: examen.temaId._id,
+        tituloTema: examen.temaId.titulo, // Ensure this line is correct
+        nombreCurso: examen.temaId.curso ? examen.temaId.curso.nombre : 'Sin curso',
+        intentos: examen.intentos,
+        preguntasRespondidas: examen.preguntasRespondidas,
+        examenPermitido: examen.examenPermitido,
+        nombreCompleto: `${examen.usuarioId.datos_personales.nombre} ${examen.usuarioId.datos_personales.apellido_paterno} ${examen.usuarioId.datos_personales.apellido_materno}`
+      };
+
+      res.status(200).json(examenConCurso);
     } else {
       res.status(404).json({ message: 'Examen no encontrado' });
     }
