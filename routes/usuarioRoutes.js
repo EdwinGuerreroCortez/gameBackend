@@ -325,32 +325,40 @@ router.post('/usuarios/:usuarioId/suscribirse/:cursoId', async (req, res) => {
   }
 });
 
-
-
-
-
-
-
-
+// Endpoint to get subscribed courses for the logged-in user
+router.get('/usuarios/:userId/cursos-suscritos', async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const usuario = await Usuario.findById(userId).populate('cursosSubscritos');
+    if (!usuario) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+    res.json({ cursos: usuario.cursosSubscritos });
+  } catch (error) {
+    console.error('Error al obtener los cursos suscritos del usuario:', error);
+    res.status(500).json({ message: 'Error al obtener los cursos suscritos del usuario.' });
+  }
+});
 
   //****************Docentes endpoitn***********************//
 
-  // Endpoint to get courses related to the logged-in user
+// Endpoint to get courses related to the logged-in user
 router.get('/usuario/:userId/cursos', async (req, res) => {
   try {
     const userId = req.params.userId;
-    const usuario = await Usuario.findById(userId).populate('cursos');
+    const usuario = await Usuario.findById(userId).populate('cursosSubscritos');
 
     if (!usuario) {
       return res.status(404).json({ message: 'Usuario no encontrado' });
     }
 
-    res.json(usuario.cursos);
+    res.json(usuario.cursosSubscritos);
   } catch (error) {
     console.error('Error al obtener los cursos del usuario:', error);
     res.status(500).json({ message: 'Error al obtener los cursos del usuario.' });
   }
 });
+
 // Endpoint para obtener los temas de los cursos relacionados a un usuario específico
 router.get('/usuario/:usuarioId/temas', async (req, res) => {
   try {
