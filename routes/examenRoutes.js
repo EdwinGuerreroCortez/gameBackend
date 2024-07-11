@@ -60,17 +60,24 @@ router.get('/examenes', async (req, res) => {
         }
       });
 
-    const examenesConCurso = examenes.map(examen => ({
-      _id: examen._id,
-      usuarioId: examen.usuarioId,
-      temaId: examen.temaId._id,
-      tituloTema: examen.temaId.titulo,
-      nombreCurso: examen.temaId.curso ? examen.temaId.curso.nombre : 'Sin curso',
-      intentos: examen.intentos,
-      preguntasRespondidas: examen.preguntasRespondidas,
-      examenPermitido: examen.examenPermitido,
-      nombreCompleto: `${examen.usuarioId.datos_personales.nombre} ${examen.usuarioId.datos_personales.apellido_paterno} ${examen.usuarioId.datos_personales.apellido_materno}`
-    }));
+    const examenesConCurso = examenes.map(examen => {
+      // Ordenar los intentos por fecha y obtener la fecha del último intento
+      const sortedPreguntasRespondidas = examen.preguntasRespondidas.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+      const fechaUltimoIntento = sortedPreguntasRespondidas[0].fecha;
+
+      return {
+        _id: examen._id,
+        usuarioId: examen.usuarioId,
+        temaId: examen.temaId._id,
+        tituloTema: examen.temaId.titulo,
+        nombreCurso: examen.temaId.curso ? examen.temaId.curso.nombre : 'Sin curso',
+        intentos: examen.intentos,
+        preguntasRespondidas: examen.preguntasRespondidas,
+        examenPermitido: examen.examenPermitido,
+        fechaUltimoIntento, // Incluir la fecha del último intento
+        nombreCompleto: `${examen.usuarioId.datos_personales.nombre} ${examen.usuarioId.datos_personales.apellido_paterno} ${examen.usuarioId.datos_personales.apellido_materno}`
+      };
+    });
 
     res.status(200).json(examenesConCurso);
   } catch (error) {
@@ -160,6 +167,7 @@ router.get('/examenes/:id', async (req, res) => {
         intentos: examen.intentos,
         preguntasRespondidas: examen.preguntasRespondidas,
         examenPermitido: examen.examenPermitido,
+        fechaUltimoIntento: examen.preguntasRespondidas.length > 0 ? examen.preguntasRespondidas[examen.preguntasRespondidas.length - 1].fecha : null,
         nombreCompleto: `${examen.usuarioId.datos_personales.nombre} ${examen.usuarioId.datos_personales.apellido_paterno} ${examen.usuarioId.datos_personales.apellido_materno}`
       };
 
@@ -171,6 +179,7 @@ router.get('/examenes/:id', async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
+
 
 router.get('/concentrado/:curso', async (req, res) => {
   const { curso } = req.params;
