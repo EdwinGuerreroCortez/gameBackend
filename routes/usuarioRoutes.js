@@ -346,18 +346,19 @@ router.get('/usuarios/:userId/cursos-suscritos', async (req, res) => {
 router.get('/usuario/:userId/cursos', async (req, res) => {
   try {
     const userId = req.params.userId;
-    const usuario = await Usuario.findById(userId).populate('cursosSubscritos');
+    const usuario = await Usuario.findById(userId).populate('cursos');
 
     if (!usuario) {
       return res.status(404).json({ message: 'Usuario no encontrado' });
     }
 
-    res.json(usuario.cursosSubscritos);
+    res.json(usuario.cursos);
   } catch (error) {
     console.error('Error al obtener los cursos del usuario:', error);
     res.status(500).json({ message: 'Error al obtener los cursos del usuario.' });
   }
 });
+
 
 // Endpoint para obtener los temas de los cursos relacionados a un usuario específico
 router.get('/usuario/:usuarioId/temas', async (req, res) => {
