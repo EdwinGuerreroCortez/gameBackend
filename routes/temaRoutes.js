@@ -225,7 +225,7 @@ router.put('/temas/:id', upload.none(), async (req, res) => {
     });
 
     if (errors.length > 0) {
-      console.log('Validation Errors:', errors);
+      
       return res.status(400).json({ error: 'Errores de validación', details: errors });
     }
 

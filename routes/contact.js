@@ -140,7 +140,7 @@ router.get('/contact/latest', async (req, res) => {
     try {
         const latestMessage = await ContactMessage.findOne().sort({ _id: -1 });
         if (!latestMessage) {
-            console.log('No hay mensajes disponibles');
+            
             return res.status(404).json({ message: 'No hay mensajes disponibles' });
         }
         res.json(latestMessage);

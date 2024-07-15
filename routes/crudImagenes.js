@@ -23,7 +23,7 @@ imagenesRouter.post('/upload', upload.single('imagen'), (req, res) => {
         return res.status(400).send("No se ha subido ningún archivo.");
     }
 
-    console.log('Archivo recibido:', req.file);
+    
 
     // Crear un stream de carga para Cloudinary
     const cld_upload_stream = cloudinary.uploader.upload_stream(
@@ -47,7 +47,7 @@ imagenesRouter.post('/upload-video', upload.single('video'), (req, res) => {
         return res.status(400).send("No se ha subido ningún archivo.");
     }
 
-    console.log('Archivo recibido:', req.file);
+    
 
     // Crear un stream de carga para Cloudinary
     const cld_upload_stream = cloudinary.uploader.upload_stream(

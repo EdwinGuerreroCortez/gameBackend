@@ -19,7 +19,7 @@ router.get('/usuarios', async (req, res) => {
 // Endpoint para crear un nuevo usuario
 router.post('/usuarios', async (req, res) => {
     try {
-      console.log('Datos del nuevo usuario:', req.body); // Línea de depuración
+       // Línea de depuración
   
       // Cifrar el password
       const hashedPassword = await bcrypt.hash(req.body.password, 10);
@@ -365,7 +365,7 @@ router.get('/usuario/:usuarioId/temas', async (req, res) => {
   try {
     const usuarioId = req.params.usuarioId;
 
-    console.log(`Buscando usuario con ID: ${usuarioId}`);
+    
 
     // Encontrar al usuario por ID y popular los cursos
     const usuario = await Usuario.findById(usuarioId).populate({
@@ -380,15 +380,10 @@ router.get('/usuario/:usuarioId/temas', async (req, res) => {
       return res.status(404).json({ message: 'Usuario no encontrado' });
     }
 
-    console.log(`Usuario encontrado: ${usuario}`);
-    console.log(`Cursos del usuario: ${JSON.stringify(usuario.cursos, null, 2)}`);
-
     // Extraer todos los temas de los cursos del usuario
     const todosLosTemas = usuario.cursos.reduce((acumulador, curso) => {
       return acumulador.concat(curso.temas);
     }, []);
-
-    console.log(`Temas encontrados: ${JSON.stringify(todosLosTemas, null, 2)}`);
 
     res.json(todosLosTemas);
   } catch (error) {
@@ -402,7 +397,7 @@ router.get('/usuario/:usuarioId/temas-evaluaciones', async (req, res) => {
   try {
     const usuarioId = req.params.usuarioId;
 
-    console.log(`Buscando usuario con ID: ${usuarioId}`);
+    
 
     // Encontrar al usuario por ID y popular los cursos y temas
     const usuario = await Usuario.findById(usuarioId).populate({
@@ -420,10 +415,6 @@ router.get('/usuario/:usuarioId/temas-evaluaciones', async (req, res) => {
     if (!usuario) {
       return res.status(404).json({ message: 'Usuario no encontrado' });
     }
-
-    console.log(`Usuario encontrado: ${usuario}`);
-    console.log(`Cursos del usuario: ${JSON.stringify(usuario.cursos, null, 2)}`);
-
     // Extraer todos los temas y sus evaluaciones de los cursos del usuario
     const temasConEvaluaciones = usuario.cursos.reduce((acumulador, curso) => {
       curso.temas.forEach(tema => {
@@ -436,9 +427,6 @@ router.get('/usuario/:usuarioId/temas-evaluaciones', async (req, res) => {
       });
       return acumulador;
     }, []);
-
-    console.log(`Temas y evaluaciones encontrados: ${JSON.stringify(temasConEvaluaciones, null, 2)}`);
-
     res.json(temasConEvaluaciones);
   } catch (error) {
     console.error('Error al obtener los temas y evaluaciones del usuario:', error);
@@ -449,7 +437,7 @@ router.get('/usuario/:usuarioId/temasbuscar', async (req, res) => {
   try {
     const usuarioId = req.params.usuarioId;
 
-    console.log(`Buscando usuario con ID: ${usuarioId}`);
+    
 
     // Encontrar al usuario por ID y popular los cursos
     const usuario = await Usuario.findById(usuarioId).populate({
@@ -464,15 +452,11 @@ router.get('/usuario/:usuarioId/temasbuscar', async (req, res) => {
       return res.status(404).json({ message: 'Usuario no encontrado' });
     }
 
-    console.log(`Usuario encontrado: ${usuario}`);
-    console.log(`Cursos del usuario: ${JSON.stringify(usuario.cursos, null, 2)}`);
-
     // Extraer todos los temas de los cursos del usuario
     const todosLosTemas = usuario.cursos.reduce((acumulador, curso) => {
       return acumulador.concat(curso.temas);
     }, []);
 
-    console.log(`Temas encontrados: ${JSON.stringify(todosLosTemas, null, 2)}`);
 
     // Obtener los IDs de los temas encontrados
     const temasIds = todosLosTemas.map(tema => tema._id);
@@ -482,7 +466,6 @@ router.get('/usuario/:usuarioId/temasbuscar', async (req, res) => {
 
     // Mostrar solo los IDs de los exámenes encontrados
     const examenesIds = examenesRelacionados.map(examen => examen._id);
-    console.log(`IDs de exámenes relacionados: ${JSON.stringify(examenesIds, null, 2)}`);
 
     res.json({ temas: todosLosTemas, examenes: examenesRelacionados });
   } catch (error) {
