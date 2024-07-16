@@ -85,7 +85,22 @@ router.post('/recuperar-contrasena', async (req, res) => {
       from: 'studyweb.uthh@gmail.com',
       to: email,
       subject: 'Recuperación de Contraseña',
-      text: `Tu código de verificación es: ${codigoVerificacion}` ,
+      html: `
+        <div style="text-align: center; font-size: 16px; font-family: Arial, sans-serif;">
+          <div style="padding: 20px; background-color: #f7f7f7; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+            <h1 style="font-size: 24px; color: #333;">Recuperación de Contraseña</h1>
+            <p style="font-size: 18px; color: #555;">Tu código de verificación es:</p>
+            <p style="font-size: 32px; font-weight: bold; color: #000; margin: 20px 0; animation: fadeIn 2s ease-in-out;">${codigoVerificacion}</p>
+            <p style="font-size: 14px; color: #777;">Este código es válido por una hora.</p>
+          </div>
+          <style>
+            @keyframes fadeIn {
+              from { opacity: 0; }
+              to { opacity: 1; }
+            }
+          </style>
+        </div>
+      `,
     };
 
     await transporter.sendMail(mailOptions);
@@ -96,6 +111,7 @@ router.post('/recuperar-contrasena', async (req, res) => {
     res.status(500).json({ message: 'Error al enviar el código de verificación.' });
   }
 });
+
 
 // Endpoint para cambiar la contraseña
 router.post('/cambiar-contrasena', async (req, res) => {
