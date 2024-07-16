@@ -1,10 +1,131 @@
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcrypt');
+const crypto = require('crypto');
+const nodemailer = require('nodemailer');
 const Usuario = require('../models/usuario');
 const Curso = require('../models/cursos'); // Reemplaza con la ruta correcta a tu modelo
 const Tema = require('../models/tema'); // Asegúrate de que la ruta sea correcta
 const Examen = require('../models/examen');
+
+// Endpoint para verificar el código de verificación
+router.post('/verificar-codigo', async (req, res) => {
+  const { email, codigoVerificacion } = req.body;
+  try {
+    const usuario = await Usuario.findOne({ 'datos_personales.correo': email });
+    if (!usuario) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+
+    if (!usuario.codigoVerificacion || usuario.codigoVerificacion.codigo !== codigoVerificacion || usuario.codigoVerificacion.expiracion < Date.now()) {
+      return res.status(400).json({ message: 'Código de verificación inválido o expirado.' });
+    }
+
+    res.status(200).json({ message: 'Código de verificación correcto.' });
+  } catch (error) {
+    console.error('Error al verificar el código de verificación:', error);
+    res.status(500).json({ message: 'Error al verificar el código de verificación.' });
+  }
+});
+
+// Endpoint para cambiar la contraseña
+router.post('/cambiar-contrasena', async (req, res) => {
+  const { email, codigoVerificacion, nuevaContrasena } = req.body;
+  try {
+    const usuario = await Usuario.findOne({ 'datos_personales.correo': email });
+    if (!usuario) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+
+    if (!usuario.codigoVerificacion || usuario.codigoVerificacion.codigo !== codigoVerificacion || usuario.codigoVerificacion.expiracion < Date.now()) {
+      return res.status(400).json({ message: 'Código de verificación inválido o expirado.' });
+    }
+
+    const hashedPassword = await bcrypt.hash(nuevaContrasena, 10);
+
+    usuario.password = hashedPassword;
+    usuario.codigoVerificacion = undefined;
+    await usuario.save();
+
+    res.status(200).json({ message: 'Contraseña cambiada exitosamente.' });
+  } catch (error) {
+    console.error('Error al cambiar la contraseña:', error);
+    res.status(500).json({ message: 'Error al cambiar la contraseña.' });
+  }
+});
+// Endpoint para enviar el código de verificación
+router.post('/recuperar-contrasena', async (req, res) => {
+  const { email } = req.body;
+  try {
+    const usuario = await Usuario.findOne({ 'datos_personales.correo': email });
+    if (!usuario) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+
+    // Generar un código de verificación
+    const codigoVerificacion = crypto.randomBytes(3).toString('hex').toUpperCase(); // Código de 6 caracteres hexadecimales
+
+    // Guardar el código de verificación y su fecha de expiración en el usuario
+    usuario.codigoVerificacion = {
+      codigo: codigoVerificacion,
+      expiracion: Date.now() + 3600000, // 1 hora de validez
+    };
+    await usuario.save();
+
+    // Configurar nodemailer para enviar el correo
+    const transporter = nodemailer.createTransport({
+      service: 'Gmail',
+      auth: {
+        user: '20221030@uthh.edu.mx',
+        pass: 'otpz zasl ncpi wjnn',
+      },
+    });
+
+    const mailOptions = {
+      from: '20221030@uthh.edu.mx',
+      to: email,
+      subject: 'Recuperación de Contraseña',
+      text: `Tu código de verificación es: ${codigoVerificacion}`,
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    res.status(200).json({ message: 'Código de verificación enviado a tu correo electrónico.' });
+  } catch (error) {
+    console.error('Error al enviar el código de verificación:', error);
+    res.status(500).json({ message: 'Error al enviar el código de verificación.' });
+  }
+});
+
+// Endpoint para cambiar la contraseña
+router.post('/cambiar-contrasena', async (req, res) => {
+  const { email, codigoVerificacion, nuevaContrasena } = req.body;
+  try {
+    const usuario = await Usuario.findOne({ 'datos_personales.correo': email });
+    if (!usuario) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+
+    // Verificar el código de verificación y su expiración
+    if (!usuario.codigoVerificacion || usuario.codigoVerificacion.codigo !== codigoVerificacion || usuario.codigoVerificacion.expiracion < Date.now()) {
+      return res.status(400).json({ message: 'Código de verificación inválido o expirado.' });
+    }
+
+    // Cifrar la nueva contraseña
+    const hashedPassword = await bcrypt.hash(nuevaContrasena, 10);
+
+    // Actualizar la contraseña y eliminar el código de verificación
+    usuario.password = hashedPassword;
+    usuario.codigoVerificacion = undefined;
+    await usuario.save();
+
+    res.status(200).json({ message: 'Contraseña cambiada exitosamente.' });
+  } catch (error) {
+    console.error('Error al cambiar la contraseña:', error);
+    res.status(500).json({ message: 'Error al cambiar la contraseña.' });
+  }
+});
+
 
 // Endpoint para obtener todos los usuarios
 router.get('/usuarios', async (req, res) => {

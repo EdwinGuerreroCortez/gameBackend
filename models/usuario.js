@@ -85,7 +85,11 @@ const usuarioSchema = new mongoose.Schema({
   cursosSubscritos: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Curso'
-  }]
+  }],
+  codigoVerificacion: {
+    codigo: { type: String },
+    expiracion: { type: Date },
+  },
 });
 
 const Usuario = mongoose.model('Usuario', usuarioSchema);
