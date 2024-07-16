@@ -76,16 +76,16 @@ router.post('/recuperar-contrasena', async (req, res) => {
     const transporter = nodemailer.createTransport({
       service: 'Gmail',
       auth: {
-        user: '20221030@uthh.edu.mx',
-        pass: 'otpz zasl ncpi wjnn',
+        user: 'studyweb.uthh@gmail.com',
+        pass: 'fckzvtqbjkhuuiid',
       },
     });
 
     const mailOptions = {
-      from: '20221030@uthh.edu.mx',
+      from: 'studyweb.uthh@gmail.com',
       to: email,
       subject: 'Recuperación de Contraseña',
-      text: `Tu código de verificación es: ${codigoVerificacion}`,
+      text: `Tu código de verificación es: ${codigoVerificacion}` ,
     };
 
     await transporter.sendMail(mailOptions);
