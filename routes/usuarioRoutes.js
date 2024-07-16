@@ -72,7 +72,7 @@ router.post('/recuperar-contrasena', async (req, res) => {
     };
     await usuario.save();
 
-    // Configurar nodemailer para enviar el correo
+    // Configurar nodemailer para enviar el correo.
     const transporter = nodemailer.createTransport({
       service: 'Gmail',
       auth: {
