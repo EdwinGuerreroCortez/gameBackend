@@ -13,7 +13,7 @@ const examenRoutes = require('./routes/examenRoutes');
 const cursosRoutes = require('./routes/cursosRoutes');
 
 const app = express(); 
-const PORT = process.env.PORT || 80;
+const PORT = process.env.PORT || 3001;
 
 // Middleware
 app.use(cors());
