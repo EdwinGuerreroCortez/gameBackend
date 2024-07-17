@@ -16,7 +16,7 @@ const nombreCursoSchema = new mongoose.Schema({
   },
   subscritores: [{
     usuario: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: mongoose.Schema.Types.ObjectId, //Nombre completo del usuario, correo, matricula
       ref: 'Usuario'
     },
     banear: {

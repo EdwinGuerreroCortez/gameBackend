@@ -61,21 +61,22 @@ router.get('/examenes', async (req, res) => {
       });
 
     const examenesConCurso = examenes.map(examen => {
-      // Ordenar los intentos por fecha y obtener la fecha del último intento
       const sortedPreguntasRespondidas = examen.preguntasRespondidas.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
-      const fechaUltimoIntento = sortedPreguntasRespondidas[0].fecha;
+      const fechaUltimoIntento = sortedPreguntasRespondidas[0]?.fecha;
 
       return {
         _id: examen._id,
-        usuarioId: examen.usuarioId,
-        temaId: examen.temaId._id,
-        tituloTema: examen.temaId.titulo,
-        nombreCurso: examen.temaId.curso ? examen.temaId.curso.nombre : 'Sin curso',
+        usuarioId: examen.usuarioId ? examen.usuarioId : null,
+        temaId: examen.temaId ? examen.temaId._id : null,
+        tituloTema: examen.temaId ? examen.temaId.titulo : 'Tema no disponible',
+        nombreCurso: examen.temaId && examen.temaId.curso ? examen.temaId.curso.nombre : 'Curso no disponible',
         intentos: examen.intentos,
         preguntasRespondidas: examen.preguntasRespondidas,
         examenPermitido: examen.examenPermitido,
-        fechaUltimoIntento, // Incluir la fecha del último intento
-        nombreCompleto: `${examen.usuarioId.datos_personales.nombre} ${examen.usuarioId.datos_personales.apellido_paterno} ${examen.usuarioId.datos_personales.apellido_materno}`
+        fechaUltimoIntento,
+        nombreCompleto: examen.usuarioId && examen.usuarioId.datos_personales 
+          ? `${examen.usuarioId.datos_personales.nombre} ${examen.usuarioId.datos_personales.apellido_paterno} ${examen.usuarioId.datos_personales.apellido_materno}` 
+          : 'Nombre no disponible'
       };
     });
 
@@ -84,6 +85,8 @@ router.get('/examenes', async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
+
+
 
 router.get('/examenes/:usuarioId/:temaId', async (req, res) => {
   try {

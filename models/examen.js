@@ -16,7 +16,7 @@ const PreguntaRespondidaSchema = new Schema({
 
 const ExamenSchema = new Schema({
   usuarioId: { type: Schema.Types.ObjectId, ref: 'Usuario', required: true },
-  temaId: { type: Schema.Types.ObjectId, ref: 'Tema', required: true },
+  temaId: { type: Schema.Types.ObjectId, ref: 'Tema', required: true },//titulo,curso
   intentos: { type: Number, default: 1 },
   preguntasRespondidas: [PreguntaRespondidaSchema],
   examenPermitido: { type: Boolean, default: false } // Add this line
