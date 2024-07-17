@@ -4,9 +4,11 @@ const bcrypt = require('bcrypt');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 const Usuario = require('../models/usuario');
-const Curso = require('../models/cursos'); // Reemplaza con la ruta correcta a tu modelo
-const Tema = require('../models/tema'); // Asegúrate de que la ruta sea correcta
+const Curso = require('../models/cursos'); 
+const Tema = require('../models/tema'); 
 const Examen = require('../models/examen');
+const Contador = require('../models/contador');
+
 
 // Endpoint para verificar el código de verificación
 router.post('/verificar-codigo', async (req, res) => {
@@ -204,29 +206,79 @@ router.post('/verificar', async (req, res) => {
 
 // Endpoint para iniciar sesión
 router.post('/login', async (req, res) => {
-    try {
-      const { email, password } = req.body;
-      const usuario = await Usuario.findOne({ "datos_personales.correo": email });
-  
-      if (!usuario) {
-        return res.status(400).json({ message: 'Correo o contraseña incorrectos' });
-      }
-  
-      const passwordMatch = await bcrypt.compare(password, usuario.password);
-      if (!passwordMatch) {
-        return res.status(400).json({ message: 'Correo o contraseña incorrectos' });
-      }
-  
-      if (!usuario.autorizacion) {
-        return res.status(401).json({ message: 'No tienes autorización para acceder' });
-      }
-  
-      // Devolver el ID del usuario y el tipo
-      res.json({ message: 'Inicio de sesión exitoso', userId: usuario._id, tipo: usuario.tipo });
-    } catch (error) {
-      res.status(500).json({ message: error.message });
+  try {
+    const { email, password } = req.body;
+    const usuario = await Usuario.findOne({ "datos_personales.correo": email });
+
+    if (!usuario) {
+      return res.status(400).json({ message: 'Correo o contraseña incorrectos' });
     }
-  });  
+
+    const passwordMatch = await bcrypt.compare(password, usuario.password);
+    if (!passwordMatch) {
+      return res.status(400).json({ message: 'Correo o contraseña incorrectos' });
+    }
+
+    if (!usuario.autorizacion) {
+      return res.status(401).json({ message: 'No tienes autorización para acceder' });
+    }
+
+    // Incrementar el contador de visitas
+    const contador = await Contador.findOne({ userId: usuario._id });
+    if (contador) {
+      contador.visitas += 1;
+      await contador.save();
+    } else {
+      await Contador.create({ userId: usuario._id, correo: usuario.datos_personales.correo, visitas: 1 });
+    }
+
+    // Obtener el total de visitas
+    const totalVisitas = await Contador.aggregate([{ $group: { _id: null, total: { $sum: "$visitas" } } }]);
+
+    // Devolver el ID del usuario, el tipo y el total de visitas
+    res.json({ message: 'Inicio de sesión exitoso', userId: usuario._id, tipo: usuario.tipo, totalVisitas: totalVisitas[0]?.total || 0 });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+
+// Endpoint para obtener el total de visitas
+router.get('/total-visitas', async (req, res) => {
+  try {
+    const totalVisitas = await Contador.aggregate([{ $group: { _id: null, total: { $sum: "$visitas" } } }]);
+    res.json({ totalVisitas: totalVisitas[0]?.total || 0 });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+//endpoint para la obtencion de entradas
+router.get('/entradas', async (req, res) => {
+  try {
+    const entradas = await Contador.find();
+    const entradasConDetalles = await Promise.all(entradas.map(async (entrada) => {
+      const usuario = await Usuario.findById(entrada.userId);
+      if (usuario) {
+        return {
+          ...entrada._doc,
+          nombre: usuario.datos_personales.nombre,
+          correo: entrada.correo, // Obtener el correo desde la colección Contador
+        };
+      } else {
+        return {
+          ...entrada._doc,
+          nombre: 'Usuario ya no existe',
+          correo: entrada.correo || 'N/A', // Obtener el correo desde la colección Contador
+        };
+      }
+    }));
+    res.json(entradasConDetalles);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 
 // Endpoint para obtener un usuario por ID
 router.get('/usuarios/:id', async (req, res) => {

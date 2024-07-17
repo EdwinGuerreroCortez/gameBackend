@@ -6,13 +6,13 @@ const userRoutes = require('./routes/usuarioRoutes');
 const imagenesRouter = require('./routes/crudImagenes');
 const imagenesRouterReact = require('./routes/imagenRoutes');
 const contactRoutes = require('./routes/contact');
-const misionVisionRoutes = require('./routes/misionVisionRoutes'); 
+const misionVisionRoutes = require('./routes/misionVisionRoutes');
 const temaRoutes = require('./routes/temaRoutes');
 const evaluacionRoutes = require('./routes/evaluacionRoutes');
 const examenRoutes = require('./routes/examenRoutes');
 const cursosRoutes = require('./routes/cursosRoutes');
 
-const app = express(); 
+const app = express();
 const PORT = process.env.PORT || 3001;
 
 // Middleware
@@ -20,7 +20,7 @@ app.use(cors());
 app.use(express.json());
 
 // Conectar a la base de datos MongoDB
-mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log('Conectado a la base de datos MongoDB'))
   .catch(err => console.error('Error de conexión a MongoDB:', err));
 
