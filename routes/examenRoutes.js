@@ -45,7 +45,6 @@ router.post('/examenes', async (req, res) => {
   }
 });
 
-
 // Ruta para obtener todos los exámenes con el título del tema y la matrícula del usuario
 router.get('/examenes', async (req, res) => {
   try {
@@ -85,8 +84,6 @@ router.get('/examenes', async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
-
-
 
 router.get('/examenes/:usuarioId/:temaId', async (req, res) => {
   try {
@@ -144,7 +141,6 @@ router.put('/examenes/:id/toggle', async (req, res) => {
   
 });
 
-
 // Nueva ruta para obtener un examen específico por id
 router.get('/examenes/:id', async (req, res) => {
   try {
@@ -182,7 +178,6 @@ router.get('/examenes/:id', async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
-
 
 router.get('/concentrado/:curso', async (req, res) => {
   const { curso } = req.params;
