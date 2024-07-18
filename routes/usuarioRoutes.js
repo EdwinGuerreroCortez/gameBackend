@@ -389,17 +389,25 @@ router.post('/usuarios/admin', async (req, res) => {
   
 // Endpoint para eliminar un usuario por ID
 router.delete('/usuarios/:id', async (req, res) => {
-    try {
-        const usuario = await Usuario.findById(req.params.id);
-        if (!usuario) {
-            return res.status(404).json({ message: 'Usuario no encontrado' });
-        }
-        await Usuario.deleteOne({ _id: req.params.id });
-        res.json({ message: 'Usuario eliminado con éxito' });
-    } catch (error) {
-        console.error('Error al eliminar usuario:', error);
-        res.status(500).json({ message: 'Error al eliminar usuario', error: error.message });
-    }
+  const userId = req.params.id;
+  try {
+      const usuario = await Usuario.findById(userId);
+      if (!usuario) {
+          return res.status(404).json({ message: 'Usuario no encontrado' });
+      }
+
+      // Buscar y actualizar los cursos eliminando la suscripción del usuario
+      await Curso.updateMany(
+          { "subscritores.usuario": userId },
+          { $pull: { subscritores: { usuario: userId } } }
+      );
+
+      await Usuario.deleteOne({ _id: userId });
+      res.json({ message: 'Usuario eliminado con éxito y sus suscripciones han sido actualizadas.' });
+  } catch (error) {
+      console.error('Error al eliminar usuario:', error);
+      res.status(500).json({ message: 'Error al eliminar usuario', error: error.message });
+  }
 });
 
 

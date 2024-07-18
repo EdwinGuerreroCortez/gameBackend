@@ -127,7 +127,7 @@ router.get('/cursos-subscritores', async (req, res) => {
     res.status(500).json({ message: 'Error al obtener los cursos y sus subscritores.' });
   }
 });
-// Endpoint to get courses and their subscribers
+// Endpoint para obtener cursos y sus suscriptores.
 router.get('/cursos-subscritores/:userId', async (req, res) => {
   try {
     const userId = req.params.userId;
@@ -144,7 +144,7 @@ router.get('/cursos-subscritores/:userId', async (req, res) => {
   }
 });
 
-// Endpoint to update the ban state of a subscriber
+// Endpoint para actualizar el estado de prohibición de una suscriptor(
 router.put('/cursos/:cursoId/subscritores/:subId/banear', async (req, res) => {
   try {
     const { cursoId, subId } = req.params;
