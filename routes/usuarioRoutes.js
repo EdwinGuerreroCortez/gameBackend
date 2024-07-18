@@ -293,7 +293,7 @@ router.get('/usuarios/:id', async (req, res) => {
     }
 });
 
-// Endpoint para actualizar un usuario por ID
+// Endpoint para actualizar un usuario por ID.
 router.put('/usuarios/:id', async (req, res) => {
     try {
         const usuario = await Usuario.findById(req.params.id);
