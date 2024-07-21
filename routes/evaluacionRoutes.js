@@ -5,6 +5,8 @@ const xlsx = require('xlsx');
 const Evaluacion = require('../models/evaluacion');
 const Tema = require('../models/tema');
 const upload = require('../middleware/upload');
+const ProgresoEvaluacion = require('../models/progresoEvaluacion');
+
 
 // Función para validar las evaluaciones
 const validateEvaluaciones = (evaluaciones) => {
@@ -340,5 +342,48 @@ router.get('/tema-evaluacion/:temaId', async (req, res) => {
     res.status(500).json({ message: 'Error al obtener la información del tema y la evaluación', error });
   }
 });
+// Ruta para guardar el progreso de la evaluación
+router.post('/evaluacion/progreso', async (req, res) => {
+  const { usuarioId, temaId, preguntas, tiempoRestante, numeroPregunta } = req.body;
 
+  try {
+    let progreso = await ProgresoEvaluacion.findOne({ usuarioId, temaId });
+
+    if (progreso) {
+      progreso.preguntas = preguntas;
+      progreso.tiempoRestante = tiempoRestante;
+      progreso.numeroPregunta = numeroPregunta;
+    } else {
+      progreso = new ProgresoEvaluacion({
+        usuarioId,
+        temaId,
+        preguntas,
+        tiempoRestante,
+        numeroPregunta
+      });
+    }
+
+    await progreso.save();
+    res.status(200).json({ message: 'Progreso guardado exitosamente' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error al guardar el progreso', error: error.message });
+  }
+});
+
+// Ruta para recuperar el progreso de la evaluación
+router.get('/evaluacion/progreso/:usuarioId/:temaId', async (req, res) => {
+  const { usuarioId, temaId } = req.params;
+
+  try {
+    const progreso = await ProgresoEvaluacion.findOne({ usuarioId, temaId });
+
+    if (!progreso) {
+      return res.status(404).json({ message: 'Progreso no encontrado' });
+    }
+
+    res.status(200).json(progreso);
+  } catch (error) {
+    res.status(500).json({ message: 'Error al obtener el progreso', error: error.message });
+  }
+});
 module.exports = router;
