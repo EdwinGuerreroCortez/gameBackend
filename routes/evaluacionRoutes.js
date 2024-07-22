@@ -363,8 +363,8 @@ router.post('/evaluacion/progreso', async (req, res) => {
       });
     }
 
-    await progreso.save();
-    res.status(200).json({ message: 'Progreso guardado exitosamente' });
+    const savedProgreso = await progreso.save();
+    res.status(200).json({ message: 'Progreso guardado exitosamente', _id: savedProgreso._id });
   } catch (error) {
     res.status(500).json({ message: 'Error al guardar el progreso', error: error.message });
   }
@@ -384,6 +384,17 @@ router.get('/evaluacion/progreso/:usuarioId/:temaId', async (req, res) => {
     res.status(200).json(progreso);
   } catch (error) {
     res.status(500).json({ message: 'Error al obtener el progreso', error: error.message });
+  }
+});
+
+router.delete('/evaluacion/progreso/:progresoId', async (req, res) => {
+  const { progresoId } = req.params;
+
+  try {
+    await ProgresoEvaluacion.deleteOne({ _id: progresoId });
+    res.status(200).json({ message: 'Progreso eliminado exitosamente' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error al eliminar el progreso', error: error.message });
   }
 });
 module.exports = router;
