@@ -22,6 +22,16 @@ router.get('/usuarios/:id', async (req, res) => {
   }
 });
 
+// Ruta para autorizar todos los usuarios
+router.put('/usuarios/autorizarTodos', async (req, res) => {
+  try {
+    await Usuario.updateMany({}, { autorizacion: true });
+    res.status(200).json({ message: 'Todos los usuarios autorizados con éxito.' });
+  } catch (error) {
+    res.status(500).json({ error: 'Error al autorizar todos los usuarios.' });
+  }
+});
+
 // Endpoint para verificar el código de verificación
 router.post('/verificar-codigo', async (req, res) => {
   const { email, codigoVerificacion } = req.body;
