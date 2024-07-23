@@ -67,7 +67,18 @@ const validateExcelData = (data) => {
 
   return errors;
 };
-
+// Obtener un tema por ID
+router.get('/temas/:id', async (req, res) => {
+  try {
+    const tema = await Tema.findById(req.params.id);
+    if (!tema) {
+      return res.status(404).json({ message: 'Tema no encontrado' });
+    }
+    res.json(tema);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
 
 // Endpoint para subir un video para un tema
 router.post('/upload-video/:id', upload.single('video'), async (req, res) => {

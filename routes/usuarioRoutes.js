@@ -9,6 +9,18 @@ const Tema = require('../models/tema');
 const Examen = require('../models/examen');
 const Contador = require('../models/contador');
 
+// Obtener un usuario por ID
+router.get('/usuarios/:id', async (req, res) => {
+  try {
+    const usuario = await Usuario.findById(req.params.id);
+    if (!usuario) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+    res.json(usuario);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
 
 // Endpoint para verificar el código de verificación
 router.post('/verificar-codigo', async (req, res) => {

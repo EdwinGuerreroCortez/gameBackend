@@ -75,7 +75,10 @@ router.get('/examenes', async (req, res) => {
         fechaUltimoIntento,
         nombreCompleto: examen.usuarioId && examen.usuarioId.datos_personales 
           ? `${examen.usuarioId.datos_personales.nombre} ${examen.usuarioId.datos_personales.apellido_paterno} ${examen.usuarioId.datos_personales.apellido_materno}` 
-          : 'Nombre no disponible'
+          : examen.usuario || 'Nombre no disponible',
+        matricula: examen.usuarioId && examen.usuarioId.datos_personales 
+          ? examen.usuarioId.datos_personales.matricula 
+          : examen.matricula || 'Matrícula no disponible'
       };
     });
 
