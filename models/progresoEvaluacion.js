@@ -28,6 +28,14 @@ const progresoEvaluacionSchema = new mongoose.Schema({
     type: Number,
     required: true,
     default: 0
+  },
+  fechaInicio: {
+    type: Date,
+    default: Date.now
+  },
+  fechaFin: {
+    type: Date,
+    required: true
   }
 });
 
