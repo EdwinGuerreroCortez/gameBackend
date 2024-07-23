@@ -79,6 +79,15 @@ router.get('/temas/:id', async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
+// Ruta para obtener temas filtrados por curso
+router.get('/temas/curso/:cursoId', async (req, res) => {
+  try {
+    const temas = await Tema.find({ curso: req.params.cursoId });
+    res.json(temas);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
 
 // Endpoint para subir un video para un tema
 router.post('/upload-video/:id', upload.single('video'), async (req, res) => {
