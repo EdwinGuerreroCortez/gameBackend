@@ -344,7 +344,7 @@ router.get('/tema-evaluacion/:temaId', async (req, res) => {
 });
 // Ruta para guardar el progreso de la evaluación
 router.post('/evaluacion/progreso', async (req, res) => {
-  const { usuarioId, temaId, preguntas, tiempoRestante, numeroPregunta } = req.body;
+  const { usuarioId, temaId, preguntas, tiempoRestante, numeroPregunta, fechaFin } = req.body;
 
   try {
     let progreso = await ProgresoEvaluacion.findOne({ usuarioId, temaId });
@@ -353,13 +353,15 @@ router.post('/evaluacion/progreso', async (req, res) => {
       progreso.preguntas = preguntas;
       progreso.tiempoRestante = tiempoRestante;
       progreso.numeroPregunta = numeroPregunta;
+      progreso.fechaFin = fechaFin;
     } else {
       progreso = new ProgresoEvaluacion({
         usuarioId,
         temaId,
         preguntas,
         tiempoRestante,
-        numeroPregunta
+        numeroPregunta,
+        fechaFin
       });
     }
 
@@ -387,6 +389,7 @@ router.get('/evaluacion/progreso/:usuarioId/:temaId', async (req, res) => {
   }
 });
 
+// Ruta para eliminar el progreso de la evaluación
 router.delete('/evaluacion/progreso/:progresoId', async (req, res) => {
   const { progresoId } = req.params;
 
