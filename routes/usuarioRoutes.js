@@ -8,6 +8,7 @@ const Curso = require('../models/cursos');
 const Tema = require('../models/tema'); 
 const Examen = require('../models/examen');
 const Contador = require('../models/contador');
+const VerificationCode = require('../models/verificationCode');
 
 // Obtener un usuario por ID
 router.get('/usuarios/:id', async (req, res) => {
@@ -693,5 +694,92 @@ router.get('/usuario/:usuarioId/temasbuscar', async (req, res) => {
   }
 });
 
+// Endpoint para enviar el código de verificación al correo
+router.post('/enviar-codigo-registro', async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    // Verificar si ya existe un usuario con el mismo correo
+    const usuarioExistente = await Usuario.findOne({ 'datos_personales.correo': email });
+    if (usuarioExistente) {
+      return res.status(400).json({ message: 'Correo electrónico ya registrado.' });
+    }
+
+    // Generar un código de verificación
+    const code = crypto.randomBytes(3).toString('hex').toUpperCase(); // Código de 6 caracteres hexadecimales
+
+    // Crear un nuevo documento de VerificationCode
+    const verificationCode = new VerificationCode({
+      email: email,
+      code: code,
+      expiresAt: Date.now()  + 3 * 60 * 1000, // 3 minutos de validez
+    });
+
+    await verificationCode.save();
+
+    // Configurar nodemailer para enviar el correo.
+    const transporter = nodemailer.createTransport({
+      service: 'Gmail',
+      auth: {
+        user: 'studyweb.uthh@gmail.com',
+        pass: 'fckzvtqbjkhuuiid',
+      },
+    });
+
+    const mailOptions = {
+      from: 'studyweb.uthh@gmail.com',
+      to: email,
+      subject: 'Código de Verificación',
+      html: `
+        <div style="text-align: center; font-size: 16px; font-family: Arial, sans-serif;">
+          <div style="padding: 20px; background-color: #f7f7f7; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+            <h1 style="font-size: 24px; color: #333;">Código de Verificación</h1>
+            <p style="font-size: 18px; color: #555;">Tu código de verificación es:</p>
+            <p style="font-size: 32px; font-weight: bold; color: #000; margin: 20px 0; animation: fadeIn 2s ease-in-out;">${code}</p>
+            <p style="font-size: 14px; color: #777;">Este código es válido por 3 minutos.</p>
+          </div>
+          <style>
+            @keyframes fadeIn {
+              from { opacity: 0; }
+              to { opacity: 1; }
+            }
+          </style>
+        </div>
+      `,
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    res.status(200).json({ message: 'Código de verificación enviado a tu correo electrónico.' });
+  } catch (error) {
+    console.error('Error al enviar el código de verificación:', error);
+    res.status(500).json({ message: 'Error al enviar el código de verificación.' });
+  }
+});
+
+// Endpoint para verificar el código de registro
+router.post('/verificar-codigo-registro', async (req, res) => {
+  const { email, code } = req.body;
+
+  try {
+    const verificationCode = await VerificationCode.findOne({ email, code });
+
+    if (!verificationCode) {
+      return res.status(400).json({ message: 'Código de verificación incorrecto o expirado.' });
+    }
+
+    if (verificationCode.expiresAt < Date.now()) {
+      await VerificationCode.deleteOne({ _id: verificationCode._id });
+      return res.status(400).json({ message: 'Código de verificación expirado.' });
+    }
+
+    await VerificationCode.deleteOne({ _id: verificationCode._id });
+
+    res.status(200).json({ message: 'Código de verificación correcto.' });
+  } catch (error) {
+    console.error('Error al verificar el código de registro:', error);
+    res.status(500).json({ message: 'Error al verificar el código de registro.' });
+  }
+});
 
 module.exports = router;
