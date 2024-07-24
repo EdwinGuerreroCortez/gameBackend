@@ -562,6 +562,35 @@ router.post('/upload-video-link/:id', async (req, res) => {
     res.status(500).json({ error: 'Error guardando el link de video. Inténtalo de nuevo.' });
   }
 });
+// Endpoint para añadir uno o varios recursos a un tema
+router.put('/temas/:id/recursos', async (req, res) => {
+  try {
+    const recursos = req.body.recursos;
 
+    if (!recursos || (Array.isArray(recursos) && recursos.length === 0)) {
+      return res.status(400).json({ error: 'Debe proporcionar al menos un recurso' });
+    }
+
+    const tema = await Tema.findById(req.params.id);
+    if (!tema) {
+      return res.status(404).json({ message: 'Tema no encontrado' });
+    }
+
+    const recursosArray = Array.isArray(recursos) ? recursos : [recursos];
+
+    recursosArray.forEach(recurso => {
+      if (!recurso.titulo || !recurso.enlace) {
+        throw new Error('Cada recurso debe tener un título y un enlace');
+      }
+      tema.recursos.push(recurso);
+    });
+
+    await tema.save();
+    res.status(200).json(tema);
+  } catch (error) {
+    console.error('Error añadiendo recursos:', error);
+    res.status(500).json({ error: 'Error añadiendo recursos. Inténtalo de nuevo.' });
+  }
+});
 
 module.exports = router;

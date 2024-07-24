@@ -11,6 +11,11 @@ const SubtemaSchema = new mongoose.Schema({
   video: { type: String, default: null },
 });
 
+const RecursoSchema = new mongoose.Schema({
+  titulo: { type: String, required: true },
+  enlace: { type: String, required: true },
+});
+
 const TemaSchema = new mongoose.Schema({
   titulo: { type: String, required: true },
   descripcion: { type: String, required: true },
@@ -23,6 +28,7 @@ const TemaSchema = new mongoose.Schema({
   habilitado: { type: Boolean, default: false },
   fecha_creacion: { type: Date, default: Date.now },
   curso: { type: mongoose.Schema.Types.ObjectId, ref: 'Curso' }, // Referencia al curso
+  recursos: { type: [RecursoSchema], default: [] }, // Array de recursos
 });
 
 module.exports = mongoose.model('Tema', TemaSchema);
