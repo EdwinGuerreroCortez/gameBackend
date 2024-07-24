@@ -71,6 +71,7 @@ router.get('/cursos', async (req, res) => {
 
 //Endpoints Docentes
 
+
 // Endpoint para crear un nuevo curso y asignarlo a un usuario
 router.post('/crearCursoAsignarUsuario', async (req, res) => {
   const { nombre, usuarioId } = req.body;
@@ -89,12 +90,22 @@ router.post('/crearCursoAsignarUsuario', async (req, res) => {
     });
 
     const savedCurso = await nuevoCurso.save();
+
+    // Actualiza el usuario para añadir el curso creado
+    const usuario = await Usuario.findById(usuarioId);
+    if (!usuario) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+    usuario.cursos.push(savedCurso._id);
+    await usuario.save();
+
     res.status(201).json(savedCurso);
   } catch (error) {
     console.error('Error al crear y asignar el curso:', error);
     res.status(400).json({ message: error.message });
   }
 });
+
 
 
 // Endpoint para obtener todos los cursos y sus suscriptores
