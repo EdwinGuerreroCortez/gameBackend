@@ -617,9 +617,6 @@ router.get('/usuario/:usuarioId/temas-evaluaciones', async (req, res) => {
   try {
     const usuarioId = req.params.usuarioId;
 
-    
-
-    // Encontrar al usuario por ID y popular los cursos y temas
     const usuario = await Usuario.findById(usuarioId).populate({
       path: 'cursos',
       populate: {
@@ -635,13 +632,16 @@ router.get('/usuario/:usuarioId/temas-evaluaciones', async (req, res) => {
     if (!usuario) {
       return res.status(404).json({ message: 'Usuario no encontrado' });
     }
+
     // Extraer todos los temas y sus evaluaciones de los cursos del usuario
     const temasConEvaluaciones = usuario.cursos.reduce((acumulador, curso) => {
       curso.temas.forEach(tema => {
         if (tema.evaluacion_id) {
           acumulador.push({
             tema: tema,
-            evaluacion: tema.evaluacion_id
+            evaluacion: tema.evaluacion_id,
+            cursoNombre: curso.nombre,
+            cursoId: curso._id // Añadir el ID del curso
           });
         }
       });
@@ -653,6 +653,8 @@ router.get('/usuario/:usuarioId/temas-evaluaciones', async (req, res) => {
     res.status(500).json({ message: 'Error al obtener los temas y evaluaciones del usuario.' });
   }
 });
+
+
 router.get('/usuario/:usuarioId/temasbuscar', async (req, res) => {
   try {
     const usuarioId = req.params.usuarioId;
