@@ -32,7 +32,7 @@ async function actualizarExamenes() {
       await examen.save();
     }
 
-    console.log('Documentos de exámenes actualizados exitosamente.');
+    
   } catch (error) {
     console.error('Error al actualizar los documentos de exámenes:', error);
   } finally {
