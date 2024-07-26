@@ -10,6 +10,35 @@ const Examen = require('../models/examen');
 const Contador = require('../models/contador');
 const VerificationCode = require('../models/verificationCode');
 
+// Endpoint para validar el correo electrónico
+router.post('/usuarios/validarCorreo', async (req, res) => {
+  const { correo } = req.body;
+
+  if (!correo) {
+    return res.status(400).json({ message: 'Correo no proporcionado.' });
+  }
+
+  try {
+    const usuario = await Usuario.findOne({ 'datos_personales.correo': correo });
+
+    if (!usuario) {
+      return res.status(404).json({ message: 'Usuario no existe.' });
+    }
+
+    if (!usuario.autorizacion) {
+      return res.status(403).json({ message: 'No tiene permiso para acceder a esta funcionalidad.' });
+    }
+
+    res.status(200).json({ message: 'Correo electrónico válido y autorizado.' });
+  } catch (error) {
+    console.error('Error al validar el correo electrónico:', error);
+    res.status(500).json({ message: 'Error al validar el correo electrónico.' });
+  }
+});
+
+
+
+
 // Obtener un usuario por ID
 router.get('/usuarios/:id', async (req, res) => {
   try {
