@@ -222,7 +222,6 @@ router.put('/evaluaciones/:id', upload.single('file'), async (req, res) => {
     res.status(500).json({ message: 'Error al actualizar la evaluación', error });
   }
 });
-
 // Ruta para descargar la plantilla de cuestionario
 router.get('/evaluaciones/plantilla', (req, res) => {
   try {
@@ -233,7 +232,8 @@ router.get('/evaluaciones/plantilla', (req, res) => {
         opcion_a: 'Opción A', 
         opcion_b: 'Opción B', 
         opcion_c: 'Opción C', 
-        opcion_d: 'Opción D' 
+        opcion_d: 'Opción D',
+        imagen: 'ejemplo.jpg' // Agregar ejemplo de imagen
       }
     ];
 
