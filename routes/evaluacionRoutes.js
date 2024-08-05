@@ -46,9 +46,12 @@ const validateEvaluaciones = (evaluaciones) => {
   return errors;
 };
 
+
+// Elimina 'imagen' de la validación de campos esperados
 const expectedFields = ['pregunta', 'respuesta_correcta', 'opcion_a', 'opcion_b', 'opcion_c', 'opcion_d'];
 
 // Ruta para cargar archivo Excel
+
 router.post('/evaluaciones/upload', upload.single('file'), async (req, res) => {
   try {
     const tema_id = req.body.tema;
@@ -59,7 +62,6 @@ router.post('/evaluaciones/upload', upload.single('file'), async (req, res) => {
     const worksheet = workbook.Sheets[sheetName];
     const data = xlsx.utils.sheet_to_json(worksheet);
 
-    const expectedFields = ['pregunta', 'respuesta_correcta', 'opcion_a', 'opcion_b', 'opcion_c', 'opcion_d', 'imagen'];
     const fileFields = Object.keys(data[0]);
     const missingFields = expectedFields.filter(field => !fileFields.includes(field));
     if (missingFields.length > 0) {
@@ -75,7 +77,7 @@ router.post('/evaluaciones/upload', upload.single('file'), async (req, res) => {
         item.opcion_d ? item.opcion_d.toString().trim() : ''
       ],
       respuesta_correcta: item.respuesta_correcta ? item.respuesta_correcta.toString().trim() : '',
-      imagen: item.imagen ? item.imagen.toString().trim() : null
+      imagen: item.imagen ? item.imagen.toString().trim() : null // Permitir valores nulos para imagen
     }));
 
     const validationErrors = validateEvaluaciones(nuevasEvaluaciones);
@@ -98,7 +100,6 @@ router.post('/evaluaciones/upload', upload.single('file'), async (req, res) => {
     res.status(400).json({ message: 'Error al procesar el archivo', details: [error.message] });
   }
 });
-
 // Ruta para descargar el archivo Excel del tema
 router.get('/temas/:id/download', async (req, res) => {
   try {
