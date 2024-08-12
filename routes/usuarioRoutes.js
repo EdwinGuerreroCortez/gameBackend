@@ -10,6 +10,9 @@ const Examen = require('../models/examen');
 const Contador = require('../models/contador');
 const VerificationCode = require('../models/verificationCode');
 
+// Cargar variables de entorno
+require('dotenv').config();
+
 // Endpoint para validar el correo electrónico
 router.post('/usuarios/validarCorreo', async (req, res) => {
   const { correo } = req.body;
@@ -131,7 +134,7 @@ router.post('/recuperar-contrasena', async (req, res) => {
       service: 'Gmail',
       auth: {
         user: 'studyweb.uthh@gmail.com',
-        pass: 'fckzvtqbjkhuuiid',
+        pass: process.env.EMAIL_PASSWORD,
       },
     });
 
@@ -753,7 +756,7 @@ router.post('/enviar-codigo-registro', async (req, res) => {
       service: 'Gmail',
       auth: {
         user: 'studyweb.uthh@gmail.com',
-        pass: 'fckzvtqbjkhuuiid',
+        pass: process.env.EMAIL_PASSWORD,
       },
     });
 
