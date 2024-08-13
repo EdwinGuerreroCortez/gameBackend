@@ -10,7 +10,7 @@ const Examen = require('../models/examen');
 const Contador = require('../models/contador');
 const VerificationCode = require('../models/verificationCode');
 
-// Cargar variables de entorno
+// Cargar variables de entorno.
 require('dotenv').config();
 
 // Endpoint para validar el correo electrónico
